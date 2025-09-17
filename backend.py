@@ -140,3 +140,32 @@ def get_ai_response(user_message):
                 "tool_call_id": tool_call.id
             })
 
+from openai import OpenAI
+client = OpenAI()
+
+response = client.responses.create(
+  model="gpt-4.1",
+  input=[
+    {
+      "role": "system",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "ou are a helpful assistant that answers customer FAQs about Metadata IQ.\nAlways provide clear, concise, and accurate information about the product.\nUse the official product documentation and FAQs provided in your knowledge base as the source of truth.\nIf you are unsure of an answer or if the question is outside the product’s scope, politely state that and suggest contacting support at support@digital-nirvana.com.\nKeep answers simple and easy to understand.\nAvoid making assumptions or providing information not related to Metadata IQ."
+        }
+      ]
+    }
+  ],
+  text={
+    "format": {
+      "type": "text"
+    }
+  },
+  reasoning={},
+  tools=[],
+  temperature=1,
+  max_output_tokens=2048,
+  top_p=1,
+  store=True,
+  include=["web_search_call.action.sources"]
+)
