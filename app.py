@@ -53,47 +53,8 @@ from openai import OpenAI
 client = OpenAI()
 
 response = client.responses.create(
-  model="gpt-4.1",
-  input=[
-    {
-      "role": "system",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "ou are a helpful assistant that answers customer FAQs about Metadata IQ.\nAlways provide clear, concise, and accurate information about the product.\nUse the official product documentation and FAQs provided in your knowledge base as the source of truth.\nIf you are unsure of an answer or if the question is outside the product’s scope, politely state that and suggest contacting support at support@digital-nirvana.com.\nKeep answers simple and easy to understand.\nAvoid making assumptions or providing information not related to Metadata IQ."
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "What is metadatiq"
-        }
-      ]
-    },
-    {
-      "id": "msg_0464d0a6bd3271550068ca5087d11081a0bf3a403bf47f40ee",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "Metadata IQ is an on-premises, AI-powered tool developed by Digital Nirvana. It automates the generation, enrichment, and management of metadata for video and audio content. By integrating with Avid® MediaCentral | Production Management, Metadata IQ helps users easily tag, index, and organize their media assets, making content discovery, editing, and production workflows more efficient.\n\nIf you have more specific questions about its features or usage, feel free to ask!"
-        }
-      ]
-    }
-  ],
-  text={
-    "format": {
-      "type": "text"
-    }
-  },
-  reasoning={},
-  tools=[],
-  temperature=1,
-  max_output_tokens=2048,
-  top_p=1,
-  store=True,
-  include=["web_search_call.action.sources"]
+  prompt={
+    "id": "pmpt_68ca5059e32c81978068e4218aac9c11099c0d5b8a6bc4e0",
+    "version": "2"
+  }
 )
