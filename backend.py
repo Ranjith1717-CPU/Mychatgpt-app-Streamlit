@@ -477,3 +477,4 @@ response = client.responses.create(
   top_p=1,
   store=True,
   include=["web_search_call.action.sources"]
+)
