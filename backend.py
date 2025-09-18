@@ -139,9 +139,7 @@ def get_ai_response(user_message):
                 "content": result,
                 "tool_call_id": tool_call.id
             })
-
-
-#FAQ metadata
+# FAQ metadata
 from openai import OpenAI
 client = OpenAI()
 
