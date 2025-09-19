@@ -406,63 +406,6 @@ response = client.responses.create(
           "text": "We offer enterprise-grade support, onboarding, custom integration assistance, and ongoing training. Our team works directly with your engineers, compliance leads, and content managers to ensure success."
         }
       ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "wHAT IS METADATA"
-        }
-      ]
-    },
-    {
-      "id": "msg_68cbcee817d0819e9e25fcd9d333bb73005d9ea2b95a488f",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "Metadata is information that describes other data. In the context of media and video, metadata refers to details about the media file, such as the title, description, keywords, duration, timestamps, speakers, and technical information. Metadata helps organize, search, manage, and retrieve media content more efficiently.\n\nIf you have more specific questions about metadata or how it works with Metadata IQ, feel free to ask!"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "WHAT IS METADATAIQ"
-        }
-      ]
-    },
-    {
-      "id": "msg_68cbcef47628819ebb08b2938f3d6fcc005d9ea2b95a488f",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "Metadata IQ is an AI-powered software solution developed by Digital Nirvana. It automatically generates and manages metadata for media assets, specifically video and audio content. Metadata IQ integrates with editing platforms like Avid MediaCentral, making it easier for content creators and broadcasters to tag, organize, search, and retrieve their media files.\n\nKey features of Metadata IQ include:\n\n- Automated speech-to-text transcription\n- Facial recognition and object identification\n- Contextual keyword and topic extraction\n- Seamless export and import of metadata to popular video editing systems\n\nMetadata IQ helps streamline media workflows, saves time on manual tagging, and improves the discoverability of media assets.\n\nFor more information, please let me know or visit the official documentation!"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "What kind of support does MetadataIQ offer?"
-        }
-      ]
-    },
-    {
-      "id": "msg_68cbd09d9b6c819e8f9a5f91895383a0005d9ea2b95a488f",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "MetadataIQ offers enterprise-grade support, including onboarding, custom integration assistance, and ongoing training. The support team works closely with your engineers, compliance leads, and content managers to ensure successful deployment and use of the platform. If you need further assistance, you can also contact support at support@digital-nirvana.com."
-        }
-      ]
     }
   ],
   text={
