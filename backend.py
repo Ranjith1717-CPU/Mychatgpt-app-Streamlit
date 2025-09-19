@@ -144,7 +144,7 @@ from openai import OpenAI
 client = OpenAI()
 
 response = client.responses.create(
-  model="gpt-4.1",
+  model="gpt-4",
   input=[
     {
       "role": "system",
@@ -404,6 +404,149 @@ response = client.responses.create(
         {
           "type": "output_text",
           "text": "We offer enterprise-grade support, onboarding, custom integration assistance, and ongoing training. Our team works directly with your engineers, compliance leads, and content managers to ensure success."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "What is metadata in broadcasting?\n\n"
+        }
+      ]
+    },
+    {
+      "id": "msg_68cce3f04688819cbcbc471e4b6d9301003dd2b1dbb0d51c",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "In broadcasting, metadata refers to additional information about video or audio content. This can include details like speaker names, timecodes, topics, as well as indicators of specific types of content such as profanity, political content, and more. This metadata is crucial for easy search, content organization, compliance with broadcasting standards, and monetization of content, especially in live and archived footage."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Why is automated metadata tagging important?\n\n"
+        }
+      ]
+    },
+    {
+      "id": "msg_68cce3f69cb0819c8a86ffbe684e7eb4003dd2b1dbb0d51c",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Automated metadata tagging is important for several reasons:\n\n1. Efficiency: Manual tagging is time-consuming and becomes increasingly difficult as the volume of content grows. Automated tagging saves time and increases efficiency.\n\n2. Accuracy: Manual tagging can lead to errors or inconsistencies. An automated system can ensure consistent, accurate metadata across all your content.\n\n3. Compliance: Automated tagging can identify and flag potentially sensitive or compliance-related content, minimizing the risk of non-compliance.\n\n4. Improved Search and Retrieval: Automated tagging enables better content searchability and retrieval by accurately categorizing data.\n\n5. Monetization: Accurate metadata tagging can help in better content organization and monetization."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "How does MetadataIQ automate metadata tagging?\n\n"
+        }
+      ]
+    },
+    {
+      "id": "msg_68cce402acb8819c9387936ec3d92fad003dd2b1dbb0d51c",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "MetadataIQ automates metadata tagging through the use of advanced speech-to-text, video recognition, and rules-based engines. This allows it to recognize and automatically tag various elements in the content, reducing the need for manual input. \n\nMetadataIQ can apply custom tagging rules specified by the user, which is particularly beneficial for compliance with broadcast regulations. The system also generates comprehensive outputs that are audit-ready, saving users from potentially labor-intensive compliance processes."
+        }
+      ]
+    },
+    {
+      "id": "msg_68cce40601b8819c81d3e47210b070dd003dd2b1dbb0d51c",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "MetadataIQ uses advanced speech-to-text, video recognition, and rules-based engines to auto-tag metadata across content types. It applies custom tagging rules for compliance and generates audit-ready outputs without manual input."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Can MetadataIQ help with broadcast compliance?"
+        }
+      ]
+    },
+    {
+      "id": "msg_68cce40df9d0819c9b8f2722384052fc003dd2b1dbb0d51c",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Yes, MetadataIQ can help significantly with broadcast compliance. It can automatically identify and tag content that may be sensitive to compliance issues such as political ads, brand mentions, profanity, and regulatory disclosures. By doing so, it ensures all content meets the requirements of local and global broadcast standards. This automated process reduces the risk of non-compliance and the potential penalties that may result from it."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "How does MetadataIQ's governance dashboard work?"
+        }
+      ]
+    },
+    {
+      "id": "msg_68cce41d43f0819cb655b6c62b012baa003dd2b1dbb0d51c",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "MetadataIQ's Governance Dashboard offers a comprehensive overview of your content's metadata. It checks the quality and completeness of your metadata, assigns scores to your content, and flags any errors for correction. The dashboard also provides a full audit log, which is essential for regulatory compliance and internal checks. Essentially, it helps manage and organize your metadata, giving you a clearer understanding of your content's compliance and performance."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "What regions or standards does MetadataIQ support for compliance tagging?\n\n"
+        }
+      ]
+    },
+    {
+      "id": "msg_68cce429c984819ca0f9346d953e37a4003dd2b1dbb0d51c",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "MetadataIQ supports compliance needs for several regions and standards including the FCC for U.S. regulation, GDPR for the European Union, and Ofcom for the UK. Additionally, it can be customized to adhere to your internal protocols or specific regulations required by your clients. It's designed to be flexible so you can maintain compliance across various regulatory environments."
+        }
+      ]
+    },
+    {
+      "id": "msg_68cce42c96fc819c8f12702bc27920f1003dd2b1dbb0d51c",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "MetadataIQ supports region-specific compliance needs including FCC (U.S.), GDPR (EU), Ofcom (UK), and can be customized to support your internal or client-specific guidelines. It's an adaptable system that can be configured to meet the unique requirements of various stakeholders."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "What platforms does MetadataIQ integrate with?\n\n"
         }
       ]
     }
