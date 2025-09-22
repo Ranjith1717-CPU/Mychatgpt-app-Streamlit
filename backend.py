@@ -140,11 +140,12 @@ def get_ai_response(user_message):
                 "tool_call_id": tool_call.id
             })
 # FAQ metadata
+
 from openai import OpenAI
 client = OpenAI()
 
 response = client.responses.create(
-  model="gpt-4",
+  model="gpt-4.1",
   input=[
     {
       "role": "system",
@@ -412,17 +413,17 @@ response = client.responses.create(
       "content": [
         {
           "type": "input_text",
-          "text": "What is metadata in broadcasting?\n\n"
+          "text": "What is metadata in broadcasting?"
         }
       ]
     },
     {
-      "id": "msg_68cce3f04688819cbcbc471e4b6d9301003dd2b1dbb0d51c",
+      "id": "msg_68d1152beac0819fa724b8042b56df100627e616ed5f0a0f",
       "role": "assistant",
       "content": [
         {
           "type": "output_text",
-          "text": "In broadcasting, metadata refers to additional information about video or audio content. This can include details like speaker names, timecodes, topics, as well as indicators of specific types of content such as profanity, political content, and more. This metadata is crucial for easy search, content organization, compliance with broadcasting standards, and monetization of content, especially in live and archived footage."
+          "text": "Metadata in broadcasting is information that describes your audio or video content. Examples include program titles, speaker names, topics, keywords, timecodes, and compliance details. This data makes it easier to search, manage, and ensure regulatory compliance for broadcast content."
         }
       ]
     },
@@ -431,17 +432,17 @@ response = client.responses.create(
       "content": [
         {
           "type": "input_text",
-          "text": "Why is automated metadata tagging important?\n\n"
+          "text": "Why is automated metadata tagging important?"
         }
       ]
     },
     {
-      "id": "msg_68cce3f69cb0819c8a86ffbe684e7eb4003dd2b1dbb0d51c",
+      "id": "msg_68d115335260819f82058bb042b794640627e616ed5f0a0f",
       "role": "assistant",
       "content": [
         {
           "type": "output_text",
-          "text": "Automated metadata tagging is important for several reasons:\n\n1. Efficiency: Manual tagging is time-consuming and becomes increasingly difficult as the volume of content grows. Automated tagging saves time and increases efficiency.\n\n2. Accuracy: Manual tagging can lead to errors or inconsistencies. An automated system can ensure consistent, accurate metadata across all your content.\n\n3. Compliance: Automated tagging can identify and flag potentially sensitive or compliance-related content, minimizing the risk of non-compliance.\n\n4. Improved Search and Retrieval: Automated tagging enables better content searchability and retrieval by accurately categorizing data.\n\n5. Monetization: Accurate metadata tagging can help in better content organization and monetization."
+          "text": "Automated metadata tagging is important because it saves time, reduces human error, and ensures consistent, accurate tagging across large volumes of content. This makes it easier to find, manage, and ensure compliance of your media assets quickly and efficiently."
         }
       ]
     },
@@ -450,27 +451,17 @@ response = client.responses.create(
       "content": [
         {
           "type": "input_text",
-          "text": "How does MetadataIQ automate metadata tagging?\n\n"
+          "text": "How does MetadataIQ automate metadata tagging?"
         }
       ]
     },
     {
-      "id": "msg_68cce402acb8819c9387936ec3d92fad003dd2b1dbb0d51c",
+      "id": "msg_68d115388ce4819f9ed1e772a81c53640627e616ed5f0a0f",
       "role": "assistant",
       "content": [
         {
           "type": "output_text",
-          "text": "MetadataIQ automates metadata tagging through the use of advanced speech-to-text, video recognition, and rules-based engines. This allows it to recognize and automatically tag various elements in the content, reducing the need for manual input. \n\nMetadataIQ can apply custom tagging rules specified by the user, which is particularly beneficial for compliance with broadcast regulations. The system also generates comprehensive outputs that are audit-ready, saving users from potentially labor-intensive compliance processes."
-        }
-      ]
-    },
-    {
-      "id": "msg_68cce40601b8819c81d3e47210b070dd003dd2b1dbb0d51c",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "MetadataIQ uses advanced speech-to-text, video recognition, and rules-based engines to auto-tag metadata across content types. It applies custom tagging rules for compliance and generates audit-ready outputs without manual input."
+          "text": "MetadataIQ automates metadata tagging by using technologies like speech-to-text, video recognition, and rules-based engines. It processes your audio and video content, applies custom tagging rules for compliance, and generates audit-ready metadata without the need for manual input."
         }
       ]
     },
@@ -484,12 +475,12 @@ response = client.responses.create(
       ]
     },
     {
-      "id": "msg_68cce40df9d0819c9b8f2722384052fc003dd2b1dbb0d51c",
+      "id": "msg_68d1153ff9f8819fb1aa66afc905d3ff0627e616ed5f0a0f",
       "role": "assistant",
       "content": [
         {
           "type": "output_text",
-          "text": "Yes, MetadataIQ can help significantly with broadcast compliance. It can automatically identify and tag content that may be sensitive to compliance issues such as political ads, brand mentions, profanity, and regulatory disclosures. By doing so, it ensures all content meets the requirements of local and global broadcast standards. This automated process reduces the risk of non-compliance and the potential penalties that may result from it."
+          "text": "Yes, MetadataIQ can help with broadcast compliance. It automatically identifies and tags compliance-sensitive content such as political ads, brand mentions, profanity, and regulatory disclosures, making it easier to meet local and global broadcast standards."
         }
       ]
     },
@@ -503,12 +494,12 @@ response = client.responses.create(
       ]
     },
     {
-      "id": "msg_68cce41d43f0819cb655b6c62b012baa003dd2b1dbb0d51c",
+      "id": "msg_68d1154783e8819f88c3b31189f658df0627e616ed5f0a0f",
       "role": "assistant",
       "content": [
         {
           "type": "output_text",
-          "text": "MetadataIQ's Governance Dashboard offers a comprehensive overview of your content's metadata. It checks the quality and completeness of your metadata, assigns scores to your content, and flags any errors for correction. The dashboard also provides a full audit log, which is essential for regulatory compliance and internal checks. Essentially, it helps manage and organize your metadata, giving you a clearer understanding of your content's compliance and performance."
+          "text": "MetadataIQ’s governance dashboard provides a centralized view of your metadata’s completeness and quality. It scores your content, highlights any errors or gaps, and maintains detailed audit logs. This helps you monitor compliance, streamline quality checks, and prepare for internal or external reviews."
         }
       ]
     },
@@ -517,27 +508,17 @@ response = client.responses.create(
       "content": [
         {
           "type": "input_text",
-          "text": "What regions or standards does MetadataIQ support for compliance tagging?\n\n"
+          "text": "What regions or standards does MetadataIQ support for compliance tagging?"
         }
       ]
     },
     {
-      "id": "msg_68cce429c984819ca0f9346d953e37a4003dd2b1dbb0d51c",
+      "id": "msg_68d1154e2168819fb20eee81751701bd0627e616ed5f0a0f",
       "role": "assistant",
       "content": [
         {
           "type": "output_text",
-          "text": "MetadataIQ supports compliance needs for several regions and standards including the FCC for U.S. regulation, GDPR for the European Union, and Ofcom for the UK. Additionally, it can be customized to adhere to your internal protocols or specific regulations required by your clients. It's designed to be flexible so you can maintain compliance across various regulatory environments."
-        }
-      ]
-    },
-    {
-      "id": "msg_68cce42c96fc819c8f12702bc27920f1003dd2b1dbb0d51c",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "MetadataIQ supports region-specific compliance needs including FCC (U.S.), GDPR (EU), Ofcom (UK), and can be customized to support your internal or client-specific guidelines. It's an adaptable system that can be configured to meet the unique requirements of various stakeholders."
+          "text": "MetadataIQ supports compliance tagging for various regional and international standards, including FCC (U.S.), GDPR (EU), Ofcom (UK), and can be tailored to meet your specific internal or client compliance requirements."
         }
       ]
     },
@@ -546,7 +527,150 @@ response = client.responses.create(
       "content": [
         {
           "type": "input_text",
-          "text": "What platforms does MetadataIQ integrate with?\n\n"
+          "text": "What platforms does MetadataIQ integrate with?"
+        }
+      ]
+    },
+    {
+      "id": "msg_68d11554c5ac819faf9c95a6e82f784d0627e616ed5f0a0f",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "MetadataIQ integrates with platforms such as Avid MediaCentral, Telestream, Grass Valley, and many leading DAM and MAM systems. Custom integrations can also be developed to fit your specific enterprise workflow needs."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Is MetadataIQ available as SaaS or on-premises?"
+        }
+      ]
+    },
+    {
+      "id": "msg_68d1155c1ab4819f89b9a583d6ef1c120627e616ed5f0a0f",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "MetadataIQ can be deployed on-premises, in the cloud, or as a hybrid solution, depending on your workflow and infrastructure requirements. This flexibility ensures it fits smoothly into your existing media environment."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Is MetadataIQ suitable for live content?"
+        }
+      ]
+    },
+    {
+      "id": "msg_68d11561ff68819fb68d666f4addab0c0627e616ed5f0a0f",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Yes, MetadataIQ is suitable for live content. It can process and tag live audio and video in real time, making it ideal for news, sports, events, and other live broadcast scenarios where immediate metadata generation is essential."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "How accurate is MetadataIQ's metadata tagging?"
+        }
+      ]
+    },
+    {
+      "id": "msg_68d115673688819fb166104b8891f8ab0627e616ed5f0a0f",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "MetadataIQ delivers broadcast-grade accuracy and reliability. Its metadata tagging is specifically designed and tuned for professional media workflows and compliance requirements, ensuring consistently high-quality results compared to generic AI solutions."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "What industries use MetadataIQ?"
+        }
+      ]
+    },
+    {
+      "id": "msg_68d1156ba464819f9d530384031958990627e616ed5f0a0f",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "MetadataIQ is used by broadcasters, sports networks, government media organizations, public broadcasters, media archives, and any industry that requires accurate, large-scale metadata management for audio and video content."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Does MetadataIQ work with archived content?"
+        }
+      ]
+    },
+    {
+      "id": "msg_68d115725fb4819f89dd2b7e01bf03690627e616ed5f0a0f",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Yes, MetadataIQ works with archived content. It can process and enrich existing archives, making old footage searchable, compliant, and ready for new opportunities such as repurposing or monetization."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Can MetadataIQ help with monetization of old content?"
+        }
+      ]
+    },
+    {
+      "id": "msg_68d115776d18819f81eee9cc9d8658f30627e616ed5f0a0f",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Yes, MetadataIQ can help with monetization of old content. By applying accurate and consistent metadata to your archived footage, it makes it easier to search, discover, and license historical content, unlocking new revenue opportunities from your existing media library."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "What kind of support does MetadataIQ offer?"
+        }
+      ]
+    },
+    {
+      "id": "msg_68d115806870819f942244fa2adb68900627e616ed5f0a0f",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "MetadataIQ offers enterprise-grade support, including onboarding, custom integration assistance, ongoing training, and troubleshooting. Our support team works closely with your technical and content teams to ensure smooth implementation and optimal use of the platform. For additional help, you can contact support at support@digital-nirvana.com."
         }
       ]
     }
