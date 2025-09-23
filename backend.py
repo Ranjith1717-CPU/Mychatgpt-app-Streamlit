@@ -127,14 +127,17 @@ def get_ai_response(user_message):
     
     client = OpenAI(api_key=OPENAI_API_KEY)
     
-    system_prompt = """You are a helpful assistant with access to weather data, student profiles, and Metadata IQ FAQ information.
+    system_prompt = """You are a helpful assistant with access to three main capabilities:
+    1. Weather data for any city
+    2. Student profiles from a database  
+    3. Metadata IQ product FAQ information
+    
+    IMPORTANT: For ANY question about MetadataIQ, metadata, broadcasting, compliance, governance dashboard, or similar topics - ALWAYS use the get_metadata_faq tool first. Do not refuse to answer these questions.
     
     For weather questions about someone's location: first get their profile, then get weather for their city.
     Describe weather naturally (sunny, cloudy, rainy, warm, etc.) based on temperature.
     
-    For Metadata IQ questions: Use the get_metadata_faq tool to provide accurate product information.
-    Always provide clear, concise, and accurate information about the product.
-    If unsure about Metadata IQ questions, suggest contacting support at support@digital-nirvana.com.
+    For Metadata IQ/metadata/broadcasting questions: ALWAYS use the get_metadata_faq tool to provide accurate product information. Pass the user's question directly to the tool.
     
     When presenting student information, ALWAYS format it exactly like this:
     
