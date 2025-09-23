@@ -51,6 +51,40 @@ def get_student_profiles():
     
     return str(results)
 
+def get_metadata_faq(question):
+    """Get FAQ responses about Metadata IQ"""
+    print(f"📋 Getting FAQ response for: {question}")
+    
+    # FAQ knowledge base
+    faq_responses = {
+        "What is metadata in broadcasting?": "Metadata in broadcasting refers to descriptive information about video or audio content—such as speaker names, timecodes, topics, profanity, political content, and more. It enables easier search, compliance, and monetization across live and archived footage.",
+        "Why is automated metadata tagging important?": "Manual tagging is time-consuming, error-prone, and unsustainable at scale. Automated tagging ensures consistent, accurate metadata that saves time, reduces compliance risks, and enables faster content retrieval.",
+        "How does MetadataIQ automate metadata tagging?": "MetadataIQ uses advanced speech-to-text, video recognition, and rules-based engines to auto-tag metadata across content types. It applies custom tagging rules for compliance and generates audit-ready outputs without manual input.",
+        "Can MetadataIQ help with broadcast compliance?": "Yes. MetadataIQ automatically identifies and tags compliance-sensitive content like political ads, brand mentions, profanity, and regulatory disclosures—ensuring every piece of content meets local and global broadcast standards.",
+        "How does MetadataIQ's governance dashboard work?": "The dashboard tracks the completeness and quality of your metadata. It scores content, flags errors, and provides full audit logs—so you're always prepared for internal checks or third-party reviews.",
+        "What regions or standards does MetadataIQ support for compliance tagging?": "MetadataIQ supports region-specific compliance needs including FCC (U.S.), GDPR (EU), Ofcom (UK), and can be customized to support your internal or client-specific guidelines.",
+        "What platforms does MetadataIQ integrate with?": "MetadataIQ integrates seamlessly with Avid MediaCentral, Telestream, Grass Valley, and a wide range of DAM and MAM systems. Custom connectors can be built for enterprise workflows.",
+        "Is MetadataIQ available as SaaS or on-premises?": "MetadataIQ is available via enterprise deployment models and is typically implemented within your infrastructure alongside your media tools. Cloud and hybrid setups are also supported based on your workflow.",
+        "Is MetadataIQ suitable for live content?": "Absolutely. MetadataIQ can process and tag live content in real time—making it ideal for news, sports, and event broadcasting where quick turnaround is critical.",
+        "How accurate is MetadataIQ's metadata tagging?": "MetadataIQ is broadcast-grade, meaning it's built for high accuracy and reliability. Unlike generic AI tools, our tagging engine is trained and tuned for professional media workflows and compliance-sensitive use cases.",
+        "What industries use MetadataIQ?": "While built for broadcasters, MetadataIQ is also used by sports networks, government media teams, public broadcasters, media archives, and any organization that needs high-volume, high-accuracy metadata management.",
+        "Does MetadataIQ work with archived content?": "Yes. MetadataIQ is used to retroactively process and enrich archives, making decades of stored footage searchable, monetizable, and compliant with current regulations.",
+        "Can MetadataIQ help with monetization of old content?": "Yes. By applying consistent metadata across your archives, MetadataIQ helps you resurface, repackage, and license old footage more efficiently—turning dormant content into new revenue opportunities.",
+        "What kind of support does MetadataIQ offer?": "We offer enterprise-grade support, onboarding, custom integration assistance, and ongoing training. Our team works directly with your engineers, compliance leads, and content managers to ensure success."
+    }
+    
+    # Find exact match first
+    if question in faq_responses:
+        return faq_responses[question]
+    
+    # Find partial matches (case insensitive)
+    question_lower = question.lower()
+    for faq_question, answer in faq_responses.items():
+        if any(word in faq_question.lower() for word in question_lower.split() if len(word) > 3):
+            return f"Based on your question, here's relevant information:\n\n{answer}"
+    
+    return "I don't have specific FAQ information for that question. Please contact support at support@digital-nirvana.com for more details."
+
 # Tool definitions
 tools = [
     {
@@ -72,6 +106,18 @@ tools = [
             "description": "Get all student profiles from database",
             "parameters": {"type": "object", "properties": {}}
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_metadata_faq",
+            "description": "Get FAQ responses about Metadata IQ product questions",
+            "parameters": {
+                "type": "object",
+                "properties": {"question": {"type": "string", "description": "The FAQ question to look up"}},
+                "required": ["question"]
+            }
+        }
     }
 ]
 
@@ -81,10 +127,14 @@ def get_ai_response(user_message):
     
     client = OpenAI(api_key=OPENAI_API_KEY)
     
-    system_prompt = """You are a helpful assistant with access to weather data and student profiles.
+    system_prompt = """You are a helpful assistant with access to weather data, student profiles, and Metadata IQ FAQ information.
     
     For weather questions about someone's location: first get their profile, then get weather for their city.
     Describe weather naturally (sunny, cloudy, rainy, warm, etc.) based on temperature.
+    
+    For Metadata IQ questions: Use the get_metadata_faq tool to provide accurate product information.
+    Always provide clear, concise, and accurate information about the product.
+    If unsure about Metadata IQ questions, suggest contacting support at support@digital-nirvana.com.
     
     When presenting student information, ALWAYS format it exactly like this:
     
@@ -131,6 +181,9 @@ def get_ai_response(user_message):
                 result = get_weather(city)
             elif tool_name == "get_student_profiles":
                 result = get_student_profiles()
+            elif tool_name == "get_metadata_faq":
+                question = json.loads(tool_call.function.arguments)["question"]
+                result = get_metadata_faq(question)
             else:
                 result = "Unknown tool"
             
@@ -139,3 +192,16 @@ def get_ai_response(user_message):
                 "content": result,
                 "tool_call_id": tool_call.id
             })
+
+# Example usage loop
+if __name__ == "__main__":
+    print("🤖 AI Assistant Started! (Type 'quit' to exit)")
+    
+    while True:
+        user_input = input("\nYou: ")
+        if user_input.lower() in ['quit', 'exit', 'bye']:
+            print("👋 Goodbye!")
+            break
+        
+        response = get_ai_response(user_input)
+        print()  # Add spacing
