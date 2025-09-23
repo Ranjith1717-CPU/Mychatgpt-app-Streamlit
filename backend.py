@@ -139,6 +139,7 @@ def get_ai_response(user_message):
                 "content": result,
                 "tool_call_id": tool_call.id
             })
+# faq
 from openai import OpenAI
 import time
 
