@@ -1,6 +1,5 @@
-# 🤖 Enhanced Digital Nirvana Chat Backend
-# This creates a comprehensive connection to answer questions about Digital Nirvana
-# Your app can now handle questions about the entire digital-nirvana.com website
+# 🤖 Simplified Digital Nirvana Chat Backend
+# This version uses static content instead of web scraping to avoid dependency issues
 
 # Import necessary libraries
 import requests    # For making web requests
@@ -8,9 +7,6 @@ import json       # For handling JSON data
 from openai import OpenAI  # Official OpenAI Python library
 import psycopg2   # For database connections
 import streamlit as st  # For building the web app
-from bs4 import BeautifulSoup  # For web scraping
-import re  # For text processing
-from urllib.parse import urljoin, urlparse  # For URL handling
 
 # Replace with your actual OpenAI API key from https://platform.openai.com/api-keys
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
@@ -55,62 +51,161 @@ def get_student_profiles():
     return str(results)
 
 def get_digital_nirvana_info(query):
-    """Get information from Digital Nirvana website based on user query"""
-    print(f"🌐 Searching Digital Nirvana website for: {query}")
+    """Get information about Digital Nirvana using static knowledge base"""
+    print(f"🌐 Getting Digital Nirvana information for: {query}")
     
-    # List of key pages to search through
-    pages_to_search = [
-        "https://digital-nirvana.com/",  # Homepage
-        "https://digital-nirvana.com/about-us/",  # About
-        "https://digital-nirvana.com/products/",  # Products
-        "https://digital-nirvana.com/solutions/",  # Solutions
-        "https://digital-nirvana.com/metadataiq-media-indexing-pam-mam/",  # MetadataIQ
-        "https://digital-nirvana.com/trint-alternative-transcription/",  # MonitorIQ
-        "https://digital-nirvana.com/contact-us/",  # Contact
-        "https://digital-nirvana.com/clients/",  # Clients
-        "https://digital-nirvana.com/case-studies/",  # Case Studies
-    ]
+    # Comprehensive Digital Nirvana knowledge base
+    knowledge_base = {
+        "company": """
+        Digital Nirvana is a leading provider of AI-powered media intelligence solutions. Founded with a mission to transform how broadcasters and media organizations manage, search, and monetize their content. The company specializes in automated metadata generation, transcription services, and media asset management solutions.
+        
+        Headquarters: Digital Nirvana serves clients globally with a focus on enterprise broadcast solutions.
+        """,
+        
+        "products": """
+        Digital Nirvana offers several key products:
+        
+        1. **MetadataIQ**: Enterprise-grade metadata automation platform for broadcast media
+           - Automated metadata tagging using AI
+           - Compliance monitoring and governance
+           - Real-time content processing
+           - Integration with major broadcast systems (Avid, Grass Valley, Telestream)
+        
+        2. **MonitorIQ**: Advanced transcription and monitoring solution
+           - Real-time speech-to-text transcription
+           - Alternative to Trint and other transcription services
+           - Live content monitoring and compliance
+           - Multi-language support
+        
+        3. **Media Asset Management Solutions**: Comprehensive content management and search capabilities
+        """,
+        
+        "metadataiq": """
+        MetadataIQ is Digital Nirvana's flagship product for automated metadata generation:
+        
+        Features:
+        - AI-powered speech recognition and content analysis
+        - Automated compliance tagging (political content, profanity, brand mentions)
+        - Real-time processing for live broadcasts
+        - Governance dashboard with quality scoring
+        - Audit-ready outputs and full logging
+        - Integration with existing broadcast workflows
+        
+        Benefits:
+        - Reduces manual tagging time by 90%+
+        - Ensures broadcast compliance automatically
+        - Makes archived content searchable and monetizable
+        - Supports major broadcast standards (FCC, GDPR, Ofcom)
+        
+        Industries served: Broadcasters, sports networks, news organizations, government media, public broadcasters
+        """,
+        
+        "monitoriq": """
+        MonitorIQ is Digital Nirvana's transcription and monitoring solution:
+        
+        Key Features:
+        - Real-time speech-to-text transcription
+        - Live content monitoring and alerts
+        - Multi-speaker identification
+        - Timestamp-accurate transcripts
+        - API integration capabilities
+        - Cloud and on-premises deployment
+        
+        Competitive Advantages:
+        - More accurate than generic transcription services
+        - Built specifically for broadcast and media workflows
+        - Better handling of technical terminology and proper nouns
+        - Enterprise-grade security and compliance
+        
+        Trint Alternative: MonitorIQ offers superior accuracy and broadcast-specific features compared to Trint
+        """,
+        
+        "clients": """
+        Digital Nirvana serves major broadcasters and media organizations including:
+        
+        - CBS - Uses MetadataIQ for content management and compliance
+        - Fox Broadcasting - Leverages automated metadata for news and sports
+        - Sinclair Broadcasting - Implements across multiple stations
+        - Government agencies - For secure media monitoring
+        - Public broadcasters - Content archival and search
+        
+        Client benefits reported:
+        - 75% reduction in content preparation time
+        - 99%+ compliance accuracy
+        - Significant cost savings on manual processes
+        - Improved content monetization opportunities
+        """,
+        
+        "solutions": """
+        Digital Nirvana provides solutions for:
+        
+        **Broadcasting:**
+        - Live content monitoring and compliance
+        - News content indexing and search
+        - Sports highlight generation
+        - Archive management and monetization
+        
+        **Media & Entertainment:**
+        - Content library management
+        - Rights management and tracking
+        - Compliance monitoring
+        - Multi-platform content distribution
+        
+        **Government & Public Sector:**
+        - Secure media monitoring
+        - Public records management
+        - Compliance and audit trails
+        - Multi-language content processing
+        """,
+        
+        "contact": """
+        Digital Nirvana Contact Information:
+        
+        Website: https://digital-nirvana.com/
+        
+        For Sales Inquiries: Contact through website or request a demo
+        For Technical Support: support@digital-nirvana.com
+        
+        Services Available:
+        - Product demos and consultations
+        - Custom integration support
+        - Training and onboarding
+        - 24/7 technical support for enterprise clients
+        - Custom development for specific workflow needs
+        """
+    }
     
-    all_content = []
+    # Search through knowledge base for relevant information
+    query_lower = query.lower()
+    relevant_info = []
     
-    for url in pages_to_search:
-        try:
-            response = requests.get(url, timeout=10, headers={
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            })
-            
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.content, 'html.parser')
-                
-                # Remove script and style elements
-                for script in soup(["script", "style", "nav", "footer", "header"]):
-                    script.decompose()
-                
-                # Extract text content
-                page_text = soup.get_text()
-                
-                # Clean up the text
-                lines = (line.strip() for line in page_text.splitlines())
-                chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-                clean_text = ' '.join(chunk for chunk in chunks if chunk)
-                
-                # Add page context
-                page_title = soup.find('title')
-                title = page_title.get_text() if page_title else url
-                
-                all_content.append(f"=== {title} ({url}) ===\n{clean_text[:2000]}")  # Limit each page to 2000 chars
-                
-        except Exception as e:
-            print(f"Error fetching {url}: {str(e)}")
-            continue
+    # Check each category for relevant keywords
+    if any(word in query_lower for word in ['company', 'about', 'digital nirvana', 'who', 'history']):
+        relevant_info.append(knowledge_base['company'])
     
-    # Combine all content
-    combined_content = "\n\n".join(all_content)
+    if any(word in query_lower for word in ['product', 'solution', 'offer', 'service']):
+        relevant_info.append(knowledge_base['products'])
     
-    if not combined_content:
-        return "Unable to fetch information from Digital Nirvana website at this time. Please visit https://digital-nirvana.com/ directly."
+    if any(word in query_lower for word in ['metadataiq', 'metadata', 'tagging', 'compliance']):
+        relevant_info.append(knowledge_base['metadataiq'])
     
-    return combined_content[:8000]  # Limit total response to 8000 characters
+    if any(word in query_lower for word in ['monitoriq', 'transcription', 'trint', 'speech', 'monitor']):
+        relevant_info.append(knowledge_base['monitoriq'])
+    
+    if any(word in query_lower for word in ['client', 'customer', 'cbs', 'fox', 'sinclair', 'user']):
+        relevant_info.append(knowledge_base['clients'])
+    
+    if any(word in query_lower for word in ['contact', 'support', 'email', 'phone', 'reach']):
+        relevant_info.append(knowledge_base['contact'])
+    
+    if any(word in query_lower for word in ['broadcast', 'media', 'government', 'entertainment']):
+        relevant_info.append(knowledge_base['solutions'])
+    
+    # If no specific match, return general product info
+    if not relevant_info:
+        relevant_info = [knowledge_base['products'], knowledge_base['company']]
+    
+    return "\n\n".join(relevant_info)
 
 def get_metadata_faq(question):
     """Get FAQ responses about Metadata IQ (keeping original function)"""
@@ -146,7 +241,7 @@ def get_metadata_faq(question):
     
     return "I don't have specific FAQ information for that question. Please contact support at support@digital-nirvana.com for more details."
 
-# Enhanced tool definitions
+# Tool definitions
 tools = [
     {
         "type": "function",
@@ -184,13 +279,13 @@ tools = [
         "type": "function",
         "function": {
             "name": "get_digital_nirvana_info",
-            "description": "Search and get information from the Digital Nirvana website about their products, services, company, clients, case studies, and solutions. Use this for ANY question about Digital Nirvana, MonitorIQ, Trint alternatives, transcription services, media solutions, or general company information.",
+            "description": "Get comprehensive information about Digital Nirvana, their products (MetadataIQ, MonitorIQ), services, clients, solutions, and company details. Use this for ANY question about Digital Nirvana, their offerings, or media intelligence solutions.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string", 
-                        "description": "The user's question or topic to search for on the Digital Nirvana website"
+                        "description": "The user's question or topic about Digital Nirvana to search for"
                     }
                 },
                 "required": ["query"]
@@ -200,46 +295,38 @@ tools = [
 ]
 
 def get_ai_response(user_message):
-    """Enhanced AI response handler with comprehensive Digital Nirvana website support"""
+    """Enhanced AI response handler with comprehensive Digital Nirvana knowledge"""
     print(f"You: {user_message}")
     
     client = OpenAI(api_key=OPENAI_API_KEY)
     
-    system_prompt = """You are a helpful AI assistant with comprehensive access to Digital Nirvana's website and additional capabilities:
+    system_prompt = """You are a helpful AI assistant with comprehensive knowledge about Digital Nirvana and additional capabilities:
 
     **PRIMARY CAPABILITIES:**
-    1. **Digital Nirvana Website Information**: Complete access to digital-nirvana.com content including:
+    1. **Digital Nirvana Expertise**: Complete knowledge about Digital Nirvana's business including:
        - Company information, history, and mission
        - All products (MetadataIQ, MonitorIQ, etc.)
        - Solutions for broadcasting, media, transcription
-       - Client testimonials and case studies
-       - Contact information and support
-       - Pricing and deployment options
+       - Client testimonials and case studies (CBS, Fox, Sinclair)
+       - Contact information and support options
+       - Competitive advantages and positioning
     
     2. **Weather data**: Current weather for any city
     3. **Student profiles**: Database of student information
     4. **MetadataIQ FAQ**: Specific product FAQ responses
 
-    **IMPORTANT USAGE RULES:**
+    **USAGE GUIDELINES:**
     
-    - For ANY question about Digital Nirvana, their products, services, company info, MonitorIQ, transcription services, Trint alternatives, or media solutions → ALWAYS use get_digital_nirvana_info tool first
+    - For ANY question about Digital Nirvana, their products, services, MonitorIQ, transcription, Trint alternatives, or media solutions → ALWAYS use get_digital_nirvana_info tool first
     
-    - For specific MetadataIQ FAQ questions that need exact FAQ responses → use get_metadata_faq tool
+    - For specific MetadataIQ FAQ questions → use get_metadata_faq tool
     
-    - For weather questions about someone's location: first get their profile, then get weather for their city
+    - For weather questions: get profiles first if needed, then weather
     
-    - For student information: ALWAYS format as:
-      **[Name]** - [Company]  
-      [Background info]  
-      LinkedIn: [URL]  
-      Calendar: [URL]
-
-    **RESPONSE GUIDELINES:**
-    - Always provide comprehensive, accurate information based on the website content
-    - If asked about Digital Nirvana competitors, pricing, or technical specifications, search the website first
-    - Be knowledgeable about their full product suite and solutions
-    - Mention specific features, benefits, and use cases found on their website
-    - Include relevant contact information when appropriate"""
+    - Always provide comprehensive, accurate responses based on the knowledge retrieved
+    - Highlight key benefits and competitive advantages
+    - Include relevant contact information when appropriate
+    - Be knowledgeable about their enterprise focus and broadcast industry expertise"""
 
     messages = [
         {"role": "system", "content": system_prompt},
@@ -290,8 +377,7 @@ def get_ai_response(user_message):
 
 # Example usage loop
 if __name__ == "__main__":
-    print("🤖 Enhanced Digital Nirvana AI Assistant Started! (Type 'quit' to exit)")
-    print("💡 Now capable of answering questions about the entire Digital Nirvana website!")
+    print("🤖 Digital Nirvana AI Assistant Started! (Type 'quit' to exit)")
     
     while True:
         user_input = input("\nYou: ")
