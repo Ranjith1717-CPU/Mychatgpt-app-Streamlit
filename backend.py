@@ -1,20 +1,23 @@
-# 🤖 Part 2: Basic OpenAI Chat Backend
-# This creates a simple connection to OpenAI's GPT-3.5 model
-# Your app will send user messages to OpenAI and get AI responses back
+# 🤖 Enhanced Digital Nirvana Chat Backend
+# This creates a comprehensive connection to answer questions about Digital Nirvana
+# Your app can now handle questions about the entire digital-nirvana.com website
 
 # Import necessary libraries
-import requests    # For making web requests (used in later parts)
-import json       # For handling JSON data (used in later parts)
-from openai import OpenAI  # Official OpenAI Python library#
-import psycopg2   # For database connections (used in later parts)
-import streamlit as st  # For building the web app (used in later parts)
+import requests    # For making web requests
+import json       # For handling JSON data
+from openai import OpenAI  # Official OpenAI Python library
+import psycopg2   # For database connections
+import streamlit as st  # For building the web app
+from bs4 import BeautifulSoup  # For web scraping
+import re  # For text processing
+from urllib.parse import urljoin, urlparse  # For URL handling
+
 # Replace with your actual OpenAI API key from https://platform.openai.com/api-keys
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-# =============================================================================
-# You do not have to modify above text once API keys are added
-# Any further steps will be pasted below (replace completely)
+
 # =============================================================================
 # Database Configuration
+# =============================================================================
 DB_HOST = "aws-0-ap-south-1.pooler.supabase.com"
 DB_PORT = 6543
 DB_DATABASE = "postgres"
@@ -51,8 +54,66 @@ def get_student_profiles():
     
     return str(results)
 
+def get_digital_nirvana_info(query):
+    """Get information from Digital Nirvana website based on user query"""
+    print(f"🌐 Searching Digital Nirvana website for: {query}")
+    
+    # List of key pages to search through
+    pages_to_search = [
+        "https://digital-nirvana.com/",  # Homepage
+        "https://digital-nirvana.com/about-us/",  # About
+        "https://digital-nirvana.com/products/",  # Products
+        "https://digital-nirvana.com/solutions/",  # Solutions
+        "https://digital-nirvana.com/metadataiq-media-indexing-pam-mam/",  # MetadataIQ
+        "https://digital-nirvana.com/trint-alternative-transcription/",  # MonitorIQ
+        "https://digital-nirvana.com/contact-us/",  # Contact
+        "https://digital-nirvana.com/clients/",  # Clients
+        "https://digital-nirvana.com/case-studies/",  # Case Studies
+    ]
+    
+    all_content = []
+    
+    for url in pages_to_search:
+        try:
+            response = requests.get(url, timeout=10, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            })
+            
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # Remove script and style elements
+                for script in soup(["script", "style", "nav", "footer", "header"]):
+                    script.decompose()
+                
+                # Extract text content
+                page_text = soup.get_text()
+                
+                # Clean up the text
+                lines = (line.strip() for line in page_text.splitlines())
+                chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+                clean_text = ' '.join(chunk for chunk in chunks if chunk)
+                
+                # Add page context
+                page_title = soup.find('title')
+                title = page_title.get_text() if page_title else url
+                
+                all_content.append(f"=== {title} ({url}) ===\n{clean_text[:2000]}")  # Limit each page to 2000 chars
+                
+        except Exception as e:
+            print(f"Error fetching {url}: {str(e)}")
+            continue
+    
+    # Combine all content
+    combined_content = "\n\n".join(all_content)
+    
+    if not combined_content:
+        return "Unable to fetch information from Digital Nirvana website at this time. Please visit https://digital-nirvana.com/ directly."
+    
+    return combined_content[:8000]  # Limit total response to 8000 characters
+
 def get_metadata_faq(question):
-    """Get FAQ responses about Metadata IQ"""
+    """Get FAQ responses about Metadata IQ (keeping original function)"""
     print(f"📋 Getting FAQ response for: {question}")
     
     # FAQ knowledge base
@@ -85,7 +146,7 @@ def get_metadata_faq(question):
     
     return "I don't have specific FAQ information for that question. Please contact support at support@digital-nirvana.com for more details."
 
-# Tool definitions
+# Enhanced tool definitions
 tools = [
     {
         "type": "function",
@@ -111,46 +172,74 @@ tools = [
         "type": "function",
         "function": {
             "name": "get_metadata_faq",
-            "description": "Get FAQ responses about Metadata IQ product questions",
+            "description": "Get specific MetadataIQ FAQ responses (use for specific MetadataIQ questions)",
             "parameters": {
                 "type": "object",
                 "properties": {"question": {"type": "string", "description": "The FAQ question to look up"}},
                 "required": ["question"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_digital_nirvana_info",
+            "description": "Search and get information from the Digital Nirvana website about their products, services, company, clients, case studies, and solutions. Use this for ANY question about Digital Nirvana, MonitorIQ, Trint alternatives, transcription services, media solutions, or general company information.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string", 
+                        "description": "The user's question or topic to search for on the Digital Nirvana website"
+                    }
+                },
+                "required": ["query"]
+            }
+        }
     }
 ]
 
 def get_ai_response(user_message):
-    """AI response handler with tool calling"""
+    """Enhanced AI response handler with comprehensive Digital Nirvana website support"""
     print(f"You: {user_message}")
     
     client = OpenAI(api_key=OPENAI_API_KEY)
     
-    system_prompt = """You are a helpful assistant with access to three main capabilities:
-    1. Weather data for any city
-    2. Student profiles from a database  
-    3. Metadata IQ product FAQ information
+    system_prompt = """You are a helpful AI assistant with comprehensive access to Digital Nirvana's website and additional capabilities:
+
+    **PRIMARY CAPABILITIES:**
+    1. **Digital Nirvana Website Information**: Complete access to digital-nirvana.com content including:
+       - Company information, history, and mission
+       - All products (MetadataIQ, MonitorIQ, etc.)
+       - Solutions for broadcasting, media, transcription
+       - Client testimonials and case studies
+       - Contact information and support
+       - Pricing and deployment options
     
-    IMPORTANT: For ANY question about MetadataIQ, metadata, broadcasting, compliance, governance dashboard, or similar topics - ALWAYS use the get_metadata_faq tool first. Do not refuse to answer these questions.
+    2. **Weather data**: Current weather for any city
+    3. **Student profiles**: Database of student information
+    4. **MetadataIQ FAQ**: Specific product FAQ responses
+
+    **IMPORTANT USAGE RULES:**
     
-    For weather questions about someone's location: first get their profile, then get weather for their city.
-    Describe weather naturally (sunny, cloudy, rainy, warm, etc.) based on temperature.
+    - For ANY question about Digital Nirvana, their products, services, company info, MonitorIQ, transcription services, Trint alternatives, or media solutions → ALWAYS use get_digital_nirvana_info tool first
     
-    For Metadata IQ/metadata/broadcasting questions: ALWAYS use the get_metadata_faq tool to provide accurate product information. Pass the user's question directly to the tool.
+    - For specific MetadataIQ FAQ questions that need exact FAQ responses → use get_metadata_faq tool
     
-    When presenting student information, ALWAYS format it exactly like this:
+    - For weather questions about someone's location: first get their profile, then get weather for their city
     
-    **[Name]** - [Company]  
-    [Background info - total experience, PM experience, specialization, etc.]  
-    LinkedIn: [actual URL]  
-    Calendar: [actual URL]  
-    
-    Example:
-    **John Doe** - Tech Company  
-    15 years total experience, 8 years in PM. Specializes in AI and Machine Learning.  
-    LinkedIn: https://www.linkedin.com/in/johndoe/  
-    Calendar: https://calendly.com/johndoe/meeting"""
+    - For student information: ALWAYS format as:
+      **[Name]** - [Company]  
+      [Background info]  
+      LinkedIn: [URL]  
+      Calendar: [URL]
+
+    **RESPONSE GUIDELINES:**
+    - Always provide comprehensive, accurate information based on the website content
+    - If asked about Digital Nirvana competitors, pricing, or technical specifications, search the website first
+    - Be knowledgeable about their full product suite and solutions
+    - Mention specific features, benefits, and use cases found on their website
+    - Include relevant contact information when appropriate"""
 
     messages = [
         {"role": "system", "content": system_prompt},
@@ -187,6 +276,9 @@ def get_ai_response(user_message):
             elif tool_name == "get_metadata_faq":
                 question = json.loads(tool_call.function.arguments)["question"]
                 result = get_metadata_faq(question)
+            elif tool_name == "get_digital_nirvana_info":
+                query = json.loads(tool_call.function.arguments)["query"]
+                result = get_digital_nirvana_info(query)
             else:
                 result = "Unknown tool"
             
@@ -198,7 +290,8 @@ def get_ai_response(user_message):
 
 # Example usage loop
 if __name__ == "__main__":
-    print("🤖 AI Assistant Started! (Type 'quit' to exit)")
+    print("🤖 Enhanced Digital Nirvana AI Assistant Started! (Type 'quit' to exit)")
+    print("💡 Now capable of answering questions about the entire Digital Nirvana website!")
     
     while True:
         user_input = input("\nYou: ")
