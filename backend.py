@@ -4,12 +4,18 @@
 # Import necessary libraries
 import requests    # For making web requests
 import json       # For handling JSON data
-from openai import OpenAI  # Official OpenAI Python library
+from openai import AzureOpenAI  # Official OpenAI Python library
 import psycopg2   # For database connections
 import streamlit as st  # For building the web app
 
 # Replace with your actual OpenAI API key from https://platform.openai.com/api-keys
-OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+AZURE_OPENAI_API_KEY = “AHz5fOtxXHg0m0OYl9neAlfOnna79WBhvetPnnZ4nssRlZXiK9FBJQQJ99BIACYeBjFXJ3w3AAABACOGcHNC”
+
+AZURE_OPENAI_ENDPOINT = “https://curious-01.openai.azure.com/”
+
+AZURE_OPENAI_API_VERSION = “2024-12-01-preview”
+
+AZURE_OPENAI_DEPLOYMENT_NAME = “Ranjith”
 
 # =============================================================================
 # Database Configuration
@@ -298,7 +304,9 @@ def get_ai_response(user_message):
     """Enhanced AI response handler with comprehensive Digital Nirvana knowledge"""
     print(f"You: {user_message}")
     
-    client = OpenAI(api_key=OPENAI_API_KEY)
+    client = client = AzureOpenAI(api_key=AZURE_API_KEY, 
+    api_version=AZURE_API_VERSION, 
+    azure_endpoint=AZURE_ENDPOINT)
     
     system_prompt = """You are a helpful AI assistant with comprehensive knowledge about Digital Nirvana and additional capabilities:
 
@@ -336,7 +344,7 @@ def get_ai_response(user_message):
     # Main conversation loop
     while True:
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="DEPLOYMENT_NAME",
             messages=messages,
             tools=tools
         )
