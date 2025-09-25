@@ -1,21 +1,20 @@
-# 🤖 Simplified Digital Nirvana Chat Backend
-# This version uses static content instead of web scraping to avoid dependency issues
+# 🤖 Azure OpenAI Digital Nirvana Chat Backend
+# This version uses Azure OpenAI instead of regular OpenAI
 
 # Import necessary libraries
 import requests    # For making web requests
 import json       # For handling JSON data
-from openai import AzureOpenAI  # Official OpenAI Python library
+from openai import AzureOpenAI  # Azure OpenAI Python library
 import psycopg2   # For database connections
 import streamlit as st  # For building the web app
 
-# Replace with your actual OpenAI API key from https://platform.openai.com/api-keys
-AZURE_OPENAI_API_KEY = “AHz5fOtxXHg0m0OYl9neAlfOnna79WBhvetPnnZ4nssRlZXiK9FBJQQJ99BIACYeBjFXJ3w3AAABACOGcHNC”
-
-AZURE_OPENAI_ENDPOINT = “https://curious-01.openai.azure.com/”
-
-AZURE_OPENAI_API_VERSION = “2024-12-01-preview”
-
-AZURE_OPENAI_DEPLOYMENT_NAME = “Ranjith”
+# =============================================================================
+# Azure OpenAI Configuration
+# =============================================================================
+AZURE_OPENAI_API_KEY = st.secrets["AZURE_OPENAI_API_KEY"]
+AZURE_OPENAI_ENDPOINT = st.secrets["AZURE_OPENAI_ENDPOINT"] 
+AZURE_OPENAI_API_VERSION = st.secrets["AZURE_OPENAI_API_VERSION"]
+AZURE_OPENAI_DEPLOYMENT_NAME = st.secrets["AZURE_OPENAI_DEPLOYMENT_NAME"]
 
 # =============================================================================
 # Database Configuration
@@ -214,7 +213,7 @@ def get_digital_nirvana_info(query):
     return "\n\n".join(relevant_info)
 
 def get_metadata_faq(question):
-    """Get FAQ responses about Metadata IQ (keeping original function)"""
+    """Get FAQ responses about Metadata IQ"""
     print(f"📋 Getting FAQ response for: {question}")
     
     # FAQ knowledge base
@@ -301,12 +300,15 @@ tools = [
 ]
 
 def get_ai_response(user_message):
-    """Enhanced AI response handler with comprehensive Digital Nirvana knowledge"""
+    """Azure OpenAI response handler with comprehensive Digital Nirvana knowledge"""
     print(f"You: {user_message}")
     
-    client = client = AzureOpenAI(api_key=AZURE_API_KEY, 
-    api_version=AZURE_API_VERSION, 
-    azure_endpoint=AZURE_ENDPOINT)
+    # Initialize Azure OpenAI client
+    client = AzureOpenAI(
+        api_key=AZURE_OPENAI_API_KEY,
+        api_version=AZURE_OPENAI_API_VERSION,
+        azure_endpoint=AZURE_OPENAI_ENDPOINT
+    )
     
     system_prompt = """You are a helpful AI assistant with comprehensive knowledge about Digital Nirvana and additional capabilities:
 
@@ -344,7 +346,7 @@ def get_ai_response(user_message):
     # Main conversation loop
     while True:
         response = client.chat.completions.create(
-            model="DEPLOYMENT_NAME",
+            model=AZURE_OPENAI_DEPLOYMENT_NAME,  # Using Azure deployment name instead of model name
             messages=messages,
             tools=tools
         )
@@ -385,7 +387,7 @@ def get_ai_response(user_message):
 
 # Example usage loop
 if __name__ == "__main__":
-    print("🤖 Digital Nirvana AI Assistant Started! (Type 'quit' to exit)")
+    print("🤖 Azure OpenAI Digital Nirvana Assistant Started! (Type 'quit' to exit)")
     
     while True:
         user_input = input("\nYou: ")
