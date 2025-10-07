@@ -1,12 +1,11 @@
-# 🤖 Azure OpenAI Digital Nirvana Chat Backend
-# This version uses Azure OpenAI instead of regular OpenAI
+# 🤖 Enhanced Azure OpenAI Digital Nirvana Chat Backend
+# Comprehensive knowledge base covering all Digital Nirvana products and services
 
-# Import necessary libraries
-import requests    # For making web requests
-import json       # For handling JSON data
-from openai import AzureOpenAI  # Azure OpenAI Python library
-import psycopg2   # For database connections
-import streamlit as st  # For building the web app
+import requests
+import json
+from openai import AzureOpenAI
+import psycopg2
+import streamlit as st
 
 # =============================================================================
 # Azure OpenAI Configuration
@@ -29,7 +28,6 @@ def get_weather(city):
     """Get current weather for a city"""
     print(f"🌤️ Getting weather for {city}...")
     
-    # Using WeatherAPI.com with your API key
     url = f"http://api.weatherapi.com/v1/current.json?key=ca1073669c984fdf940100649251309&q={city}"
     try:
         response = requests.get(url, timeout=10)
@@ -56,195 +54,113 @@ def get_student_profiles():
     return str(results)
 
 def get_digital_nirvana_info(query):
-    """Get information about Digital Nirvana using static knowledge base"""
+    """
+    Comprehensive Digital Nirvana knowledge base covering all products and services.
+    Returns detailed information based on the query.
+    """
     print(f"🌐 Getting Digital Nirvana information for: {query}")
     
-    # Comprehensive Digital Nirvana knowledge base
+    # COMPREHENSIVE DIGITAL NIRVANA KNOWLEDGE BASE
     knowledge_base = {
-        "company": """
-        Digital Nirvana is a leading provider of AI-powered media intelligence solutions. Founded with a mission to transform how broadcasters and media organizations manage, search, and monetize their content. The company specializes in automated metadata generation, transcription services, and media asset management solutions.
+        "company": """Digital Nirvana Company Overview: Automate Workflows, Streamline Operations, Comply with Regulations, & Drive Insights with AI. Harness the power of AI for unparalleled efficiency. Our innovative solutions optimize processes, saving time and resources while delivering actionable intelligence. Digital Nirvana optimizes your media, data, and compliance workflows with advanced AI, turning time-consuming processes into seamless tasks. Core Products include MonitorIQ, MetadataIQ, and MediaServicesIQ. Bespoke Solutions accelerate delivery of critical business outcomes across Media & Entertainment, Financial Services, Education, Legal, Healthcare, and Technology Sectors. Website: https://digital-nirvana.com/""",
         
-        Headquarters: Digital Nirvana serves clients globally with a focus on enterprise broadcast solutions.
-        """,
+        "monitoriq": """MonitorIQ: The Ultimate Broadcast Signal Monitoring Tool. Meet MonitorIQ! The ultimate Content monitoring, Compliance Logging, and Verification Solution! Monitor ad performance issues, inconsistent service quality, compliance gaps, content monitoring challenges, and more in a single platform. Key Capabilities: 1) Ad Performance Verification & Sales Empowerment - Intuitive self-service tool for sales and executive teams, quickly spot-check ads, verify proof of performance, effortlessly reconcile traffic logs with aired recordings. 2) Quality of Experience (QoE) Monitoring - Proactive alarms for visual impairments, visibility into every transmission and delivery point, return path monitoring. 3) Compliance Logging - Track and report on loudness compliance, ensure closed caption compliance (CC608, CC708, international standards), real-time alerting. 4) Content Monitoring - Access 1 to 100+ channel recordings from any web browser, instant access to critical content and metadata, competitive ratings monitoring. URL: https://digital-nirvana.com/monitoriq-broadcasting-signal-monitoring/""",
         
-        "products": """
-        Digital Nirvana offers several key products:
+        "metadataiq": """MetadataIQ: Enterprise-Grade Metadata Automation for Broadcasters. MetadataIQ Simplifies Your Broadcast Workflows and Keeps You Compliant On Air. The Backbone Of Broadcast Metadata Workflows. Automate metadata tagging, track quality, and meet broadcast standards at scale. Deeply Integrated, Natively Built - No Third-Party Hassles. Metadata automation inside Avid & Grass Valley, no extra plugins required. Key Features: Automated Metadata Tagging Engine, Compliance Tagging & Rules Engine (political ads, brand mentions, profanity), Broadcast-Grade Integrations (Avid MediaCentral, Telestream, Grass Valley), Real-Time Live Processing, Governance Dashboard & Quality Scoring, Batch Scheduling & Pipeline Automation. Trusted By: CBS, Fox Broadcasting, Sinclair Broadcasting. Supports FCC, GDPR, Ofcom compliance. Industries: Broadcasting, Production, News, Sports, Archives. URL: https://digital-nirvana.com/metadataiq-media-indexing-pam-mam/""",
         
-        1. **MetadataIQ**: Enterprise-grade metadata automation platform for broadcast media
-           - Automated metadata tagging using AI
-           - Compliance monitoring and governance
-           - Real-time content processing
-           - Integration with major broadcast systems (Avid, Grass Valley, Telestream)
+        "mediaservicesiq": """MediaServicesIQ: AI/ML Content Optimization Platform. Transform your media management and content optimization with MediaServicesIQ. Unlock automated features like chapter marker generation, content summarization, music licensing identification, ad monitoring. Key Features: 1) Podcast Enhancement - Automatic chapter marker generation, content summarization and segmentation, automated content classification, keyword generation for enhanced SEO. 2) Music Licensing Management - Auto-identification of music content (artist, title, publisher), automated visibility into licensing status, quickly identify compliant and expired licenses. 3) Ad Monitoring & Revenue Optimization - Automate ad monitoring and reporting, extract brand, product, category information, maximize revenue with contextual ad insertion. URL: https://digital-nirvana.com/mediaservicesiq-ai-ml-content-optimization/""",
         
-        2. **MonitorIQ**: Advanced transcription and monitoring solution
-           - Real-time speech-to-text transcription
-           - Alternative to Trint and other transcription services
-           - Live content monitoring and compliance
-           - Multi-language support
+        "tranceiq": """TranceIQ: Transcription, Captioning & Subtitle Platform. Ultimate platform revolutionizing transcription, captioning, subtitle generation, and publishing. Core Capabilities: 1) Automated Transcript Generation - 50%+ efficiency improvement, 30+ native source languages, 90%+ accuracy levels. 2) Caption Creation - Automatically conform transcripts into captions, adherence to Amazon Prime, Netflix, Hulu style guidelines, improve accessibility for users anywhere. 3) Subtitle Generation & Localization - Auto-translate captions into 100+ languages, repurpose assets in different languages, expand global reach. 4) Publishing & Fulfillment - Deliver in all industry-supported formats, sidecar file or embedded options, direct API integration with enterprise systems. URL: https://digital-nirvana.com/tranceiq-transcription-captioning-subtitle/""",
         
-        3. **Media Asset Management Solutions**: Comprehensive content management and search capabilities
-        """,
+        "media_enrichment": """Media Enrichment: Boost Productivity, Save Time, and Optimize Costs with AI-Powered Solutions. YES! Digital Nirvana provides comprehensive dubbing services through Subs N Dubs. Delivering highly accurate machine-generated and human-curated captions, subtitles, dubbing, media analysis, and media monitoring services. Services: 1) Subs N Dubs (AI-Powered Dubbing) - AI-powered subtitling and dubbing in 60+ languages, natural-sounding voiceovers, cultural adaptation, seamless localization for businesses, educators, media creators, global brands. 2) Captioning - Accurate closed captioning, live captioning, caption conformance, lecture captioning for all industries. 3) Transcription - Create accurate transcripts, tag metadata, integrate into content management systems, versatile across finance, healthcare, legal, technology, broadcasting. 4) Subtitling - Subtitles in 20+ languages, quick turnaround, localize translations from source language. Client Success: Hollywood powerhouse 24-48 hour turnaround, Spanish media giant reduced captioning from 15 hours to less than 2 hours. URL: https://digital-nirvana.com/media-enrichment-solutions/""",
         
-        "metadataiq": """
-        MetadataIQ is Digital Nirvana's flagship product for automated metadata generation:
+        "cloud_engineering": """Cloud Engineering: Elevate Your Business with Scalable, Secure Cloud Solutions. Streamline operations and scale effortlessly with expert cloud strategies, seamless migrations, cutting-edge automation. Services: 1) Cloud Strategy, Design, Migration - Tailor-made cloud strategy, readiness assessments, hybrid architecture design, flawless migration, scalable infrastructure. 2) Cloud-Native Development and Automation - Accelerate business with cloud-native applications, containerization, CI/CD pipelines, serverless technologies, workflow automation. 3) Cloud Security, Management, Optimization - Compliance-driven security, advanced threat detection, cost optimization, proactive monitoring, right-sized resources. 4) Data Services and Cloud Integration - Cloud database migration, AI/ML integration, smart analytics pipelines, real-time insights. 5) Reliable Connectivity, Expert Guidance - Secure VPCs, hybrid connections, strategic advice, technology enablement. URL: https://digital-nirvana.com/cloud-engineering/""",
         
-        Features:
-        - AI-powered speech recognition and content analysis
-        - Automated compliance tagging (political content, profanity, brand mentions)
-        - Real-time processing for live broadcasts
-        - Governance dashboard with quality scoring
-        - Audit-ready outputs and full logging
-        - Integration with existing broadcast workflows
+        "data_intelligence": """Data Intelligence: Turn Data Into Your Competitive Advantage. Transform unstructured data into actionable intelligence. Services: 1) Data Labeling - Deliver accurate annotations across text, images, audio, video. Optimize data to power AI models, improving prediction accuracy and performance. 2) Model Validation - Assess and verify predictive models to ensure accuracy on unseen data. Expert validation and hyperparameter tuning for peak performance. 3) Data Analytics - Turn complex datasets into actionable insights. Make informed decisions across various fields, from predictive analytics to detailed visualizations. 4) Prompt Engineering - Design tailored inputs that enable AI models to deliver precise, impactful results. Maximize accuracy and utility with expertly crafted prompts. 5) Data Wrangling - Transform and structure messy data into usable format. Ensure data is consistent, accurate, ready for in-depth analysis. URL: https://digital-nirvana.com/data-intelligence-solutions/""",
         
-        Benefits:
-        - Reduces manual tagging time by 90%+
-        - Ensures broadcast compliance automatically
-        - Makes archived content searchable and monetizable
-        - Supports major broadcast standards (FCC, GDPR, Ofcom)
+        "investment_research": """Investment Research: Empower Investment Decisions with Real-Time Financial Insights. Providing accurate, real-time financial event transcripts, summaries, in-depth market research. Services: 1) Financial Reporting Insights - Real-time insights from earnings calls, live-streaming transcripts, follow key points, identify trends, gauge sentiment. 2) Corporate Event Calendar - Accurate timely records of important financial events, precise corporate event tracking, comprehensive event data. 3) Insights and Summaries - Transform vast information into concise actionable insights, distill complex data into key takeaways, save time. 4) Market Intel & Research - Data analytics with industry expertise, analyze market size, customer behavior, competitor landscape. Client Success: Financial transcripts with best accuracy, 3-4 hour turnaround vs 6+ hours with competitors. URL: https://digital-nirvana.com/investment-research-solutions/""",
         
-        Industries served: Broadcasters, sports networks, news organizations, government media, public broadcasters
-        """,
+        "learning_management": """Learning Management: Elevate Assessments, Ensure Integrity, Improve Outcomes. Language LSRW and mathematics evaluation, performance assessments, scoring, grading, skill assessments. Services: 1) Comprehensive Academic Assessments - Holistic LSRW evaluations, constructive feedback, fast insightful reports, save educators time. 2) Content Development and Management - Engaging multimedia content, diverse assessments, seamless lifecycle management, align with curricular standards. 3) Advanced Lecture Captioning - AI-powered real-time transcription, captioning, multilingual translation for universities and schools, enhance inclusivity. 4) Adaptive Proctoring - Real-time monitoring, AI behavior analysis, secure in-person and online exams, prevent cheating. URL: https://digital-nirvana.com/learning-management-solutions/""",
         
-        "monitoriq": """
-        MonitorIQ is Digital Nirvana's transcription and monitoring solution:
+        "clients": """Digital Nirvana Trusted Clients & Success Stories. Major Broadcasters: CBS, Fox Broadcasting, Sinclair Broadcasting, Tier-1 broadcasters globally. Client Success Stories: 1) Hollywood Media-Processing Powerhouse: 24-48 hour turnaround, exceeded expectations, 24/7 operations, ability to accommodate rush orders. 2) Financial Markets: Best accuracy imaginable, 3-4 hour turnaround vs 6+ hours with other providers. 3) Spanish Media Giant: Reduced captioning time from 15 hours to less than 2, game changer with multilingual translation. Proven Results: 75% reduction in content prep time, 99%+ compliance accuracy, significant cost savings.""",
         
-        Key Features:
-        - Real-time speech-to-text transcription
-        - Live content monitoring and alerts
-        - Multi-speaker identification
-        - Timestamp-accurate transcripts
-        - API integration capabilities
-        - Cloud and on-premises deployment
-        
-        Competitive Advantages:
-        - More accurate than generic transcription services
-        - Built specifically for broadcast and media workflows
-        - Better handling of technical terminology and proper nouns
-        - Enterprise-grade security and compliance
-        
-        Trint Alternative: MonitorIQ offers superior accuracy and broadcast-specific features compared to Trint
-        """,
-        
-        "clients": """
-        Digital Nirvana serves major broadcasters and media organizations including:
-        
-        - CBS - Uses MetadataIQ for content management and compliance
-        - Fox Broadcasting - Leverages automated metadata for news and sports
-        - Sinclair Broadcasting - Implements across multiple stations
-        - Government agencies - For secure media monitoring
-        - Public broadcasters - Content archival and search
-        
-        Client benefits reported:
-        - 75% reduction in content preparation time
-        - 99%+ compliance accuracy
-        - Significant cost savings on manual processes
-        - Improved content monetization opportunities
-        """,
-        
-        "solutions": """
-        Digital Nirvana provides solutions for:
-        
-        **Broadcasting:**
-        - Live content monitoring and compliance
-        - News content indexing and search
-        - Sports highlight generation
-        - Archive management and monetization
-        
-        **Media & Entertainment:**
-        - Content library management
-        - Rights management and tracking
-        - Compliance monitoring
-        - Multi-platform content distribution
-        
-        **Government & Public Sector:**
-        - Secure media monitoring
-        - Public records management
-        - Compliance and audit trails
-        - Multi-language content processing
-        """,
-        
-        "contact": """
-        Digital Nirvana Contact Information:
-        
-        Website: https://digital-nirvana.com/
-        
-        For Sales Inquiries: Contact through website or request a demo
-        For Technical Support: support@digital-nirvana.com
-        
-        Services Available:
-        - Product demos and consultations
-        - Custom integration support
-        - Training and onboarding
-        - 24/7 technical support for enterprise clients
-        - Custom development for specific workflow needs
-        """
+        "contact": """Contact Digital Nirvana. Website: https://digital-nirvana.com/ Product Pages: MonitorIQ, MetadataIQ, MediaServicesIQ, TranceIQ, Media Enrichment, Cloud Engineering, Data Intelligence, Investment Research, Learning Management. Services: Product demos, custom integration support, training and onboarding, 24/7 technical support for enterprise clients, strategic advice and readiness assessments."""
     }
     
-    # Search through knowledge base for relevant information
+    # Intelligent query matching
     query_lower = query.lower()
     relevant_info = []
     
-    # Check each category for relevant keywords
-    if any(word in query_lower for word in ['company', 'about', 'digital nirvana', 'who', 'history']):
-        relevant_info.append(knowledge_base['company'])
-    
-    if any(word in query_lower for word in ['product', 'solution', 'offer', 'service']):
-        relevant_info.append(knowledge_base['products'])
-    
-    if any(word in query_lower for word in ['metadataiq', 'metadata', 'tagging', 'compliance']):
-        relevant_info.append(knowledge_base['metadataiq'])
-    
-    if any(word in query_lower for word in ['monitoriq', 'transcription', 'trint', 'speech', 'monitor']):
+    # Product-specific queries
+    if any(word in query_lower for word in ['monitoriq', 'monitor iq', 'signal monitoring', 'broadcast monitoring', 'ad verification', 'qoe', 'compliance logging']):
         relevant_info.append(knowledge_base['monitoriq'])
     
-    if any(word in query_lower for word in ['client', 'customer', 'cbs', 'fox', 'sinclair', 'user']):
+    if any(word in query_lower for word in ['metadataiq', 'metadata iq', 'metadata', 'tagging', 'compliance', 'governance', 'avid', 'grass valley']):
+        relevant_info.append(knowledge_base['metadataiq'])
+    
+    if any(word in query_lower for word in ['mediaservicesiq', 'media services', 'chapter marker', 'podcast', 'music licensing', 'ad monitoring']):
+        relevant_info.append(knowledge_base['mediaservicesiq'])
+    
+    if any(word in query_lower for word in ['tranceiq', 'trance iq']):
+        relevant_info.append(knowledge_base['tranceiq'])
+    
+    if any(word in query_lower for word in ['transcription', 'transcribe', 'transcript']):
+        relevant_info.append(knowledge_base['tranceiq'])
+        relevant_info.append(knowledge_base['media_enrichment'])
+    
+    if any(word in query_lower for word in ['caption', 'captioning', 'closed caption', 'live caption']):
+        relevant_info.append(knowledge_base['tranceiq'])
+        relevant_info.append(knowledge_base['media_enrichment'])
+    
+    if any(word in query_lower for word in ['subtitle', 'subtitling', 'subtitles']):
+        relevant_info.append(knowledge_base['tranceiq'])
+        relevant_info.append(knowledge_base['media_enrichment'])
+    
+    if any(word in query_lower for word in ['dubbing', 'dub', 'dubs', 'voiceover', 'voice over', 'subs n dubs', 'subs and dubs']):
+        relevant_info.append(knowledge_base['media_enrichment'])
+    
+    if any(word in query_lower for word in ['translation', 'translate', 'localization', 'localize', 'multilingual']):
+        relevant_info.append(knowledge_base['tranceiq'])
+        relevant_info.append(knowledge_base['media_enrichment'])
+    
+    if any(word in query_lower for word in ['media enrichment', 'enrichment service']):
+        relevant_info.append(knowledge_base['media_enrichment'])
+    
+    if any(word in query_lower for word in ['cloud engineering', 'cloud migration', 'cloud strategy', 'cloud native', 'containerization', 'serverless', 'cloud security']):
+        relevant_info.append(knowledge_base['cloud_engineering'])
+    
+    if any(word in query_lower for word in ['data intelligence', 'data wrangling', 'data labeling', 'data labelling', 'prompt engineering', 'model validation', 'analytics', 'ai model', 'machine learning']):
+        relevant_info.append(knowledge_base['data_intelligence'])
+    
+    if any(word in query_lower for word in ['investment research', 'earnings call', 'financial reporting', 'market intel', 'corporate event', 'financial insight']):
+        relevant_info.append(knowledge_base['investment_research'])
+    
+    if any(word in query_lower for word in ['learning management', 'academic assessment', 'proctoring', 'education', 'e-learning', 'lms', 'learning solution']):
+        relevant_info.append(knowledge_base['learning_management'])
+    
+    if any(word in query_lower for word in ['company', 'about', 'digital nirvana', 'who', 'overview', 'what is']):
+        relevant_info.append(knowledge_base['company'])
+    
+    if any(word in query_lower for word in ['product', 'solution', 'offer', 'service', 'all products']):
+        relevant_info.extend([knowledge_base['company'], knowledge_base['monitoriq'], knowledge_base['metadataiq']])
+    
+    if any(word in query_lower for word in ['client', 'customer', 'cbs', 'fox', 'sinclair', 'who uses']):
         relevant_info.append(knowledge_base['clients'])
     
-    if any(word in query_lower for word in ['contact', 'support', 'email', 'phone', 'reach']):
+    if any(word in query_lower for word in ['contact', 'support', 'demo', 'reach', 'sales', 'inquiry']):
         relevant_info.append(knowledge_base['contact'])
     
-    if any(word in query_lower for word in ['broadcast', 'media', 'government', 'entertainment']):
-        relevant_info.append(knowledge_base['solutions'])
-    
-    # If no specific match, return general product info
     if not relevant_info:
-        relevant_info = [knowledge_base['products'], knowledge_base['company']]
+        relevant_info = [knowledge_base['company']]
     
-    return "\n\n".join(relevant_info)
-
-def get_metadata_faq(question):
-    """Get FAQ responses about Metadata IQ"""
-    print(f"📋 Getting FAQ response for: {question}")
+    seen = set()
+    unique_info = []
+    for item in relevant_info:
+        if item not in seen:
+            seen.add(item)
+            unique_info.append(item)
     
-    # FAQ knowledge base
-    faq_responses = {
-        "What is metadata in broadcasting?": "Metadata in broadcasting refers to descriptive information about video or audio content—such as speaker names, timecodes, topics, profanity, political content, and more. It enables easier search, compliance, and monetization across live and archived footage.",
-        "Why is automated metadata tagging important?": "Manual tagging is time-consuming, error-prone, and unsustainable at scale. Automated tagging ensures consistent, accurate metadata that saves time, reduces compliance risks, and enables faster content retrieval.",
-        "How does MetadataIQ automate metadata tagging?": "MetadataIQ uses advanced speech-to-text, video recognition, and rules-based engines to auto-tag metadata across content types. It applies custom tagging rules for compliance and generates audit-ready outputs without manual input.",
-        "Can MetadataIQ help with broadcast compliance?": "Yes. MetadataIQ automatically identifies and tags compliance-sensitive content like political ads, brand mentions, profanity, and regulatory disclosures—ensuring every piece of content meets local and global broadcast standards.",
-        "How does MetadataIQ's governance dashboard work?": "The dashboard tracks the completeness and quality of your metadata. It scores content, flags errors, and provides full audit logs—so you're always prepared for internal checks or third-party reviews.",
-        "What regions or standards does MetadataIQ support for compliance tagging?": "MetadataIQ supports region-specific compliance needs including FCC (U.S.), GDPR (EU), Ofcom (UK), and can be customized to support your internal or client-specific guidelines.",
-        "What platforms does MetadataIQ integrate with?": "MetadataIQ integrates seamlessly with Avid MediaCentral, Telestream, Grass Valley, and a wide range of DAM and MAM systems. Custom connectors can be built for enterprise workflows.",
-        "Is MetadataIQ available as SaaS or on-premises?": "MetadataIQ is available via enterprise deployment models and is typically implemented within your infrastructure alongside your media tools. Cloud and hybrid setups are also supported based on your workflow.",
-        "Is MetadataIQ suitable for live content?": "Absolutely. MetadataIQ can process and tag live content in real time—making it ideal for news, sports, and event broadcasting where quick turnaround is critical.",
-        "How accurate is MetadataIQ's metadata tagging?": "MetadataIQ is broadcast-grade, meaning it's built for high accuracy and reliability. Unlike generic AI tools, our tagging engine is trained and tuned for professional media workflows and compliance-sensitive use cases.",
-        "What industries use MetadataIQ?": "While built for broadcasters, MetadataIQ is also used by sports networks, government media teams, public broadcasters, media archives, and any organization that needs high-volume, high-accuracy metadata management.",
-        "Does MetadataIQ work with archived content?": "Yes. MetadataIQ is used to retroactively process and enrich archives, making decades of stored footage searchable, monetizable, and compliant with current regulations.",
-        "Can MetadataIQ help with monetization of old content?": "Yes. By applying consistent metadata across your archives, MetadataIQ helps you resurface, repackage, and license old footage more efficiently—turning dormant content into new revenue opportunities.",
-        "What kind of support does MetadataIQ offer?": "We offer enterprise-grade support, onboarding, custom integration assistance, and ongoing training. Our team works directly with your engineers, compliance leads, and content managers to ensure success."
-    }
-    
-    # Find exact match first
-    if question in faq_responses:
-        return faq_responses[question]
-    
-    # Find partial matches (case insensitive)
-    question_lower = question.lower()
-    for faq_question, answer in faq_responses.items():
-        if any(word in faq_question.lower() for word in question_lower.split() if len(word) > 3):
-            return f"Based on your question, here's relevant information:\n\n{answer}"
-    
-    return "I don't have specific FAQ information for that question. Please contact support at support@digital-nirvana.com for more details."
+    return " ".join(unique_info)
 
 # Tool definitions
 tools = [
@@ -271,27 +187,12 @@ tools = [
     {
         "type": "function",
         "function": {
-            "name": "get_metadata_faq",
-            "description": "Get specific MetadataIQ FAQ responses (use for specific MetadataIQ questions)",
-            "parameters": {
-                "type": "object",
-                "properties": {"question": {"type": "string", "description": "The FAQ question to look up"}},
-                "required": ["question"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
             "name": "get_digital_nirvana_info",
-            "description": "Get comprehensive information about Digital Nirvana, their products (MetadataIQ, MonitorIQ), services, clients, solutions, and company details. Use this for ANY question about Digital Nirvana, their offerings, or media intelligence solutions.",
+            "description": "Get comprehensive information about Digital Nirvana and ALL their products/services including MonitorIQ, MetadataIQ, MediaServicesIQ, TranceIQ, Media Enrichment, Cloud Engineering, Data Intelligence, Investment Research, Learning Management. Use for ANY question about Digital Nirvana.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "query": {
-                        "type": "string", 
-                        "description": "The user's question or topic about Digital Nirvana to search for"
-                    }
+                    "query": {"type": "string", "description": "The user's question about Digital Nirvana"}
                 },
                 "required": ["query"]
             }
@@ -300,67 +201,36 @@ tools = [
 ]
 
 def get_ai_response(user_message):
-    """Azure OpenAI response handler with comprehensive Digital Nirvana knowledge"""
+    """Azure OpenAI response handler - Streamlit compatible version"""
     print(f"You: {user_message}")
     
-    # Initialize Azure OpenAI client
     client = AzureOpenAI(
         api_key=AZURE_OPENAI_API_KEY,
         api_version=AZURE_OPENAI_API_VERSION,
         azure_endpoint=AZURE_OPENAI_ENDPOINT
     )
     
-    system_prompt = """You are a helpful AI assistant with comprehensive knowledge about Digital Nirvana and additional capabilities:
-
-    **PRIMARY CAPABILITIES:**
-    1. **Digital Nirvana Expertise**: Complete knowledge about Digital Nirvana's business including:
-       - Company information, history, and mission
-       - All products (MetadataIQ, MonitorIQ, etc.)
-       - Solutions for broadcasting, media, transcription
-       - Client testimonials and case studies (CBS, Fox, Sinclair)
-       - Contact information and support options
-       - Competitive advantages and positioning
-    
-    2. **Weather data**: Current weather for any city
-    3. **Student profiles**: Database of student information
-    4. **MetadataIQ FAQ**: Specific product FAQ responses
-
-    **USAGE GUIDELINES:**
-    
-    - For ANY question about Digital Nirvana, their products, services, MonitorIQ, transcription, Trint alternatives, or media solutions → ALWAYS use get_digital_nirvana_info tool first
-    
-    - For specific MetadataIQ FAQ questions → use get_metadata_faq tool
-    
-    - For weather questions: get profiles first if needed, then weather
-    
-    - Always provide comprehensive, accurate responses based on the knowledge retrieved
-    - Highlight key benefits and competitive advantages
-    - Include relevant contact information when appropriate
-    - Be knowledgeable about their enterprise focus and broadcast industry expertise"""
+    system_prompt = """You are a highly knowledgeable AI assistant specializing in Digital Nirvana's complete product portfolio and services. For ANY question about Digital Nirvana, their products, services, or solutions, ALWAYS use get_digital_nirvana_info tool. Provide comprehensive, detailed responses based on retrieved knowledge. Highlight key benefits, features, and competitive advantages."""
 
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_message}
     ]
     
-    # Main conversation loop
     while True:
         response = client.chat.completions.create(
-            model=AZURE_OPENAI_DEPLOYMENT_NAME,  # Using Azure deployment name instead of model name
+            model=AZURE_OPENAI_DEPLOYMENT_NAME,
             messages=messages,
             tools=tools
         )
         
-        # No tool calls - return final answer
         if not response.choices[0].message.tool_calls:
             answer = response.choices[0].message.content
             print(f"AI: {answer}")
             return answer
         
-        # Add assistant message
         messages.append(response.choices[0].message)
         
-        # Execute all tool calls
         for tool_call in response.choices[0].message.tool_calls:
             tool_name = tool_call.function.name
             print(f"🛠️ AI is using tool: {tool_name}")
@@ -370,9 +240,6 @@ def get_ai_response(user_message):
                 result = get_weather(city)
             elif tool_name == "get_student_profiles":
                 result = get_student_profiles()
-            elif tool_name == "get_metadata_faq":
-                question = json.loads(tool_call.function.arguments)["question"]
-                result = get_metadata_faq(question)
             elif tool_name == "get_digital_nirvana_info":
                 query = json.loads(tool_call.function.arguments)["query"]
                 result = get_digital_nirvana_info(query)
@@ -385,9 +252,9 @@ def get_ai_response(user_message):
                 "tool_call_id": tool_call.id
             })
 
-# Example usage loop
 if __name__ == "__main__":
-    print("🤖 Azure OpenAI Digital Nirvana Assistant Started! (Type 'quit' to exit)")
+    print("🤖 Enhanced Digital Nirvana Assistant Started!")
+    print("(Type 'quit' to exit)\n")
     
     while True:
         user_input = input("\nYou: ")
@@ -396,4 +263,4 @@ if __name__ == "__main__":
             break
         
         response = get_ai_response(user_input)
-        print()  # Add spacing
+        print()
