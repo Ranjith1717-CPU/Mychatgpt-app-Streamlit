@@ -1186,7 +1186,9 @@ def get_ai_response(user_message, conversation_history=None):
         if not response.choices[0].message.tool_calls:
             answer = response.choices[0].message.content
             print(f"AI: {answer}")
-            return answer, messages  # Return both answer and conversation history
+            # Return tuple for compatibility with conversation history tracking
+            # But can also be unpacked as single value for backward compatibility
+            return answer if conversation_history is None else (answer, messages)
         
         # Add assistant message
         messages.append(response.choices[0].message)
@@ -1227,5 +1229,23 @@ if __name__ == "__main__":
             print("👋 Goodbye!")
             break
         
-        response, conversation_history = get_ai_response(user_input, conversation_history)
+        result = get_ai_response(user_input, conversation_history)
+        
+        # Handle both single return value and tuple
+        if isinstance(result, tuple):
+            response, conversation_history = result
+        else:
+            response = result
+        
         print()
+
+# Streamlit-compatible wrapper function for backward compatibility
+def get_ai_response_simple(user_message):
+    """
+    Simplified version that only returns the response text.
+    Use this if your Streamlit app expects a single return value.
+    """
+    result = get_ai_response(user_message, conversation_history=None)
+    if isinstance(result, tuple):
+        return result[0]
+    return result
