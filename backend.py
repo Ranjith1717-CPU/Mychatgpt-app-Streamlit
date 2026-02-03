@@ -1,199 +1,497 @@
-# 🤖 Enhanced Azure OpenAI Digital Nirvana Chat Backend
-# Comprehensive knowledge base covering all Digital Nirvana products and services
+# 🤖 Financial Advisor AI Chatbot Backend - AdvisoryAI Hack-to-Hire Challenge
+# Comprehensive proactive chatbot for UK Financial Advisors
 
-import requests
 import json
 from openai import AzureOpenAI
-import psycopg2
 import streamlit as st
+from datetime import datetime, timedelta
+from dataclasses import dataclass
+from typing import List, Dict, Any
+import random
 
 # =============================================================================
 # Azure OpenAI Configuration
 # =============================================================================
 AZURE_OPENAI_API_KEY = st.secrets["AZURE_OPENAI_API_KEY"]
-AZURE_OPENAI_ENDPOINT = st.secrets["AZURE_OPENAI_ENDPOINT"] 
+AZURE_OPENAI_ENDPOINT = st.secrets["AZURE_OPENAI_ENDPOINT"]
 AZURE_OPENAI_API_VERSION = st.secrets["AZURE_OPENAI_API_VERSION"]
 AZURE_OPENAI_DEPLOYMENT_NAME = st.secrets["AZURE_OPENAI_DEPLOYMENT_NAME"]
 
 # =============================================================================
-# Database Configuration
+# Mock Data - Realistic Financial Advisor Scenarios
 # =============================================================================
-DB_HOST = "aws-0-ap-south-1.pooler.supabase.com"
-DB_PORT = 6543
-DB_DATABASE = "postgres"
-DB_USER = "postgres.ntqronyjnvuvqhbhpudn"
-DB_PASSWORD = "RbUL1wu88gGuuDJ"
 
-def get_weather(city):
-    """Get current weather for a city"""
-    print(f"🌤️ Getting weather for {city}...")
-    
-    url = f"http://api.weatherapi.com/v1/current.json?key=ca1073669c984fdf940100649251309&q={city}"
-    try:
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            temp = data['current']['temp_c']
-            condition = data['current']['condition']['text']
-            return f"Weather in {city}: {condition}, {temp}°C"
-    except:
-        pass
-    
-    return f"Weather data not available for {city}"
+class MockDataGenerator:
+    def __init__(self):
+        self.clients = self._generate_client_data()
+        self.meetings = self._generate_meeting_data()
+        self.recommendations = self._generate_recommendations()
+        self.compliance_items = self._generate_compliance_data()
 
-def get_student_profiles():
-    """Get all student data from Supabase"""
-    print("📊 Getting student profiles...")
-    
-    conn = psycopg2.connect(host=DB_HOST, port=DB_PORT, database=DB_DATABASE, user=DB_USER, password=DB_PASSWORD)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM linkedin_profiles ORDER BY id")
-    results = cursor.fetchall()
-    conn.close()
-    
-    return str(results)
+    def _generate_client_data(self):
+        """Generate realistic client profiles"""
+        return [
+            {
+                "id": 1, "name": "David Chen", "age": 45, "status": "Active",
+                "last_review": "2024-01-15", "risk_profile": "Moderate",
+                "net_worth": 850000, "annual_income": 120000,
+                "retirement_goal": 2035, "children": 2, "education_planning": True,
+                "isa_allowance_used": 15000, "isa_allowance_remaining": 5000,
+                "annual_allowance_used": 35000, "annual_allowance_remaining": 25000,
+                "cash_reserves": 45000, "monthly_expenses": 4500,
+                "withdrawal_rate": 0, "portfolio_equity_percent": 65,
+                "protection_cover": "Life + Critical Illness", "estate_planning": False,
+                "birthday": "1979-03-15", "business_owner": False,
+                "last_contact": "2024-11-20", "concerns": ["market volatility", "retirement timing"],
+                "life_events": ["daughter starting university in 2026"],
+                "revenue_generated": 8500, "service_time_hours": 12
+            },
+            {
+                "id": 2, "name": "Sarah Williams", "age": 38, "status": "Active",
+                "last_review": "2023-08-10", "risk_profile": "Aggressive",
+                "net_worth": 1200000, "annual_income": 95000,
+                "retirement_goal": 2040, "children": 1, "education_planning": False,
+                "isa_allowance_used": 20000, "isa_allowance_remaining": 0,
+                "annual_allowance_used": 40000, "annual_allowance_remaining": 20000,
+                "cash_reserves": 25000, "monthly_expenses": 3800,
+                "withdrawal_rate": 0, "portfolio_equity_percent": 45,
+                "protection_cover": "None", "estate_planning": True,
+                "birthday": "1986-12-08", "business_owner": True,
+                "last_contact": "2023-12-01", "concerns": ["business exit planning"],
+                "life_events": ["considering second child", "business expansion"],
+                "revenue_generated": 12000, "service_time_hours": 8
+            },
+            {
+                "id": 3, "name": "Robert Thompson", "age": 62, "status": "Active",
+                "last_review": "2024-10-05", "risk_profile": "Conservative",
+                "net_worth": 1800000, "annual_income": 75000,
+                "retirement_goal": 2026, "children": 3, "education_planning": False,
+                "isa_allowance_used": 20000, "isa_allowance_remaining": 0,
+                "annual_allowance_used": 10000, "annual_allowance_remaining": 50000,
+                "cash_reserves": 180000, "monthly_expenses": 5200,
+                "withdrawal_rate": 5.2, "portfolio_equity_percent": 30,
+                "protection_cover": "Life Insurance", "estate_planning": False,
+                "birthday": "1962-09-22", "business_owner": False,
+                "last_contact": "2024-11-15", "concerns": ["sequence of returns risk"],
+                "life_events": ["retirement party next year", "daughter's wedding in March"],
+                "revenue_generated": 15000, "service_time_hours": 6
+            },
+            {
+                "id": 4, "name": "Emma Jackson", "age": 29, "status": "Prospect",
+                "last_review": "Never", "risk_profile": "Moderate",
+                "net_worth": 125000, "annual_income": 55000,
+                "retirement_goal": 2060, "children": 0, "education_planning": False,
+                "isa_allowance_used": 5000, "isa_allowance_remaining": 15000,
+                "annual_allowance_used": 8000, "annual_allowance_remaining": 52000,
+                "cash_reserves": 35000, "monthly_expenses": 2800,
+                "withdrawal_rate": 0, "portfolio_equity_percent": 80,
+                "protection_cover": "None", "estate_planning": False,
+                "birthday": "1995-06-12", "business_owner": False,
+                "last_contact": "2024-11-28", "concerns": ["first time investing"],
+                "life_events": ["recent promotion", "buying first home"],
+                "revenue_generated": 0, "service_time_hours": 3
+            },
+            {
+                "id": 5, "name": "Michael Gurung", "age": 52, "status": "Active",
+                "last_review": "2024-03-20", "risk_profile": "Moderate",
+                "net_worth": 950000, "annual_income": 110000,
+                "retirement_goal": 2030, "children": 2, "education_planning": True,
+                "isa_allowance_used": 18000, "isa_allowance_remaining": 2000,
+                "annual_allowance_used": 45000, "annual_allowance_remaining": 15000,
+                "cash_reserves": 85000, "monthly_expenses": 5800,
+                "withdrawal_rate": 0, "portfolio_equity_percent": 55,
+                "protection_cover": "Life + Income Protection", "estate_planning": True,
+                "birthday": "1972-11-30", "business_owner": True,
+                "last_contact": "2024-10-15", "concerns": ["inheritance tax", "long-term care"],
+                "life_events": ["son starting university", "considering early retirement"],
+                "revenue_generated": 11500, "service_time_hours": 14
+            },
+            {
+                "id": 6, "name": "Lisa Patel", "age": 41, "status": "Active",
+                "last_review": "2023-05-15", "risk_profile": "Moderate",
+                "net_worth": 720000, "annual_income": 88000,
+                "retirement_goal": 2038, "children": 3, "education_planning": True,
+                "isa_allowance_used": 12000, "isa_allowance_remaining": 8000,
+                "annual_allowance_used": 30000, "annual_allowance_remaining": 30000,
+                "cash_reserves": 95000, "monthly_expenses": 4200,
+                "withdrawal_rate": 0, "portfolio_equity_percent": 58,
+                "protection_cover": "Life Insurance", "estate_planning": False,
+                "birthday": "1983-01-25", "business_owner": False,
+                "last_contact": "2023-09-10", "concerns": ["education costs", "mortgage"],
+                "life_events": ["twins starting secondary school", "new grandchild"],
+                "revenue_generated": 7200, "service_time_hours": 16
+            }
+        ]
 
-def get_digital_nirvana_info(query):
-    """
-    Comprehensive Digital Nirvana knowledge base covering all products and services.
-    Returns detailed information based on the query.
-    """
-    print(f"🌐 Getting Digital Nirvana information for: {query}")
-    
-    # COMPREHENSIVE DIGITAL NIRVANA KNOWLEDGE BASE
-    knowledge_base = {
-        "company": """Digital Nirvana Company Overview: Automate Workflows, Streamline Operations, Comply with Regulations, & Drive Insights with AI. Harness the power of AI for unparalleled efficiency. Our innovative solutions optimize processes, saving time and resources while delivering actionable intelligence. Digital Nirvana optimizes your media, data, and compliance workflows with advanced AI, turning time-consuming processes into seamless tasks. Core Products include MonitorIQ, MetadataIQ, and MediaServicesIQ. Bespoke Solutions accelerate delivery of critical business outcomes across Media & Entertainment, Financial Services, Education, Legal, Healthcare, and Technology Sectors. Website: https://digital-nirvana.com/""",
-        
-        "monitoriq": """MonitorIQ: The Ultimate Broadcast Signal Monitoring Tool. Meet MonitorIQ! The ultimate Content monitoring, Compliance Logging, and Verification Solution! Monitor ad performance issues, inconsistent service quality, compliance gaps, content monitoring challenges, and more in a single platform. Key Capabilities: 1) Ad Performance Verification & Sales Empowerment - Intuitive self-service tool for sales and executive teams, quickly spot-check ads, verify proof of performance, effortlessly reconcile traffic logs with aired recordings. 2) Quality of Experience (QoE) Monitoring - Proactive alarms for visual impairments, visibility into every transmission and delivery point, return path monitoring. 3) Compliance Logging - Track and report on loudness compliance, ensure closed caption compliance (CC608, CC708, international standards), real-time alerting. 4) Content Monitoring - Access 1 to 100+ channel recordings from any web browser, instant access to critical content and metadata, competitive ratings monitoring. URL: https://digital-nirvana.com/monitoriq-broadcasting-signal-monitoring/""",
-        
-        "metadataiq": """MetadataIQ: Enterprise-Grade Metadata Automation for Broadcasters. MetadataIQ Simplifies Your Broadcast Workflows and Keeps You Compliant On Air. The Backbone Of Broadcast Metadata Workflows. Automate metadata tagging, track quality, and meet broadcast standards at scale. Deeply Integrated, Natively Built - No Third-Party Hassles. Metadata automation inside Avid & Grass Valley, no extra plugins required. Key Features: Automated Metadata Tagging Engine, Compliance Tagging & Rules Engine (political ads, brand mentions, profanity), Broadcast-Grade Integrations (Avid MediaCentral, Telestream, Grass Valley), Real-Time Live Processing, Governance Dashboard & Quality Scoring, Batch Scheduling & Pipeline Automation. Trusted By: CBS, Fox Broadcasting, Sinclair Broadcasting. Supports FCC, GDPR, Ofcom compliance. Industries: Broadcasting, Production, News, Sports, Archives. URL: https://digital-nirvana.com/metadataiq-media-indexing-pam-mam/""",
-        
-        "mediaservicesiq": """MediaServicesIQ: AI/ML Content Optimization Platform. Transform your media management and content optimization with MediaServicesIQ. Unlock automated features like chapter marker generation, content summarization, music licensing identification, ad monitoring. Key Features: 1) Podcast Enhancement - Automatic chapter marker generation, content summarization and segmentation, automated content classification, keyword generation for enhanced SEO. 2) Music Licensing Management - Auto-identification of music content (artist, title, publisher), automated visibility into licensing status, quickly identify compliant and expired licenses. 3) Ad Monitoring & Revenue Optimization - Automate ad monitoring and reporting, extract brand, product, category information, maximize revenue with contextual ad insertion. URL: https://digital-nirvana.com/mediaservicesiq-ai-ml-content-optimization/""",
-        
-        "tranceiq": """TranceIQ: Transcription, Captioning & Subtitle Platform. Ultimate platform revolutionizing transcription, captioning, subtitle generation, and publishing. Core Capabilities: 1) Automated Transcript Generation - 50%+ efficiency improvement, 30+ native source languages, 90%+ accuracy levels. 2) Caption Creation - Automatically conform transcripts into captions, adherence to Amazon Prime, Netflix, Hulu style guidelines, improve accessibility for users anywhere. 3) Subtitle Generation & Localization - Auto-translate captions into 100+ languages, repurpose assets in different languages, expand global reach. 4) Publishing & Fulfillment - Deliver in all industry-supported formats, sidecar file or embedded options, direct API integration with enterprise systems. URL: https://digital-nirvana.com/tranceiq-transcription-captioning-subtitle/""",
-        
-        "media_enrichment": """Media Enrichment: Boost Productivity, Save Time, and Optimize Costs with AI-Powered Solutions. YES! Digital Nirvana provides comprehensive dubbing services through Subs N Dubs. Delivering highly accurate machine-generated and human-curated captions, subtitles, dubbing, media analysis, and media monitoring services. Services: 1) Subs N Dubs (AI-Powered Dubbing) - AI-powered subtitling and dubbing in 60+ languages, natural-sounding voiceovers, cultural adaptation, seamless localization for businesses, educators, media creators, global brands. 2) Captioning - Accurate closed captioning, live captioning, caption conformance, lecture captioning for all industries. 3) Transcription - Create accurate transcripts, tag metadata, integrate into content management systems, versatile across finance, healthcare, legal, technology, broadcasting. 4) Subtitling - Subtitles in 20+ languages, quick turnaround, localize translations from source language. Client Success: Hollywood powerhouse 24-48 hour turnaround, Spanish media giant reduced captioning from 15 hours to less than 2 hours. URL: https://digital-nirvana.com/media-enrichment-solutions/""",
-        
-        "cloud_engineering": """Cloud Engineering: Elevate Your Business with Scalable, Secure Cloud Solutions. Streamline operations and scale effortlessly with expert cloud strategies, seamless migrations, cutting-edge automation. Services: 1) Cloud Strategy, Design, Migration - Tailor-made cloud strategy, readiness assessments, hybrid architecture design, flawless migration, scalable infrastructure. 2) Cloud-Native Development and Automation - Accelerate business with cloud-native applications, containerization, CI/CD pipelines, serverless technologies, workflow automation. 3) Cloud Security, Management, Optimization - Compliance-driven security, advanced threat detection, cost optimization, proactive monitoring, right-sized resources. 4) Data Services and Cloud Integration - Cloud database migration, AI/ML integration, smart analytics pipelines, real-time insights. 5) Reliable Connectivity, Expert Guidance - Secure VPCs, hybrid connections, strategic advice, technology enablement. URL: https://digital-nirvana.com/cloud-engineering/""",
-        
-        "data_intelligence": """Data Intelligence: Turn Data Into Your Competitive Advantage. Transform unstructured data into actionable intelligence. Services: 1) Data Labeling - Deliver accurate annotations across text, images, audio, video. Optimize data to power AI models, improving prediction accuracy and performance. 2) Model Validation - Assess and verify predictive models to ensure accuracy on unseen data. Expert validation and hyperparameter tuning for peak performance. 3) Data Analytics - Turn complex datasets into actionable insights. Make informed decisions across various fields, from predictive analytics to detailed visualizations. 4) Prompt Engineering - Design tailored inputs that enable AI models to deliver precise, impactful results. Maximize accuracy and utility with expertly crafted prompts. 5) Data Wrangling - Transform and structure messy data into usable format. Ensure data is consistent, accurate, ready for in-depth analysis. URL: https://digital-nirvana.com/data-intelligence-solutions/""",
-        
-        "investment_research": """Investment Research: Empower Investment Decisions with Real-Time Financial Insights. Providing accurate, real-time financial event transcripts, summaries, in-depth market research. Services: 1) Financial Reporting Insights - Real-time insights from earnings calls, live-streaming transcripts, follow key points, identify trends, gauge sentiment. 2) Corporate Event Calendar - Accurate timely records of important financial events, precise corporate event tracking, comprehensive event data. 3) Insights and Summaries - Transform vast information into concise actionable insights, distill complex data into key takeaways, save time. 4) Market Intel & Research - Data analytics with industry expertise, analyze market size, customer behavior, competitor landscape. Client Success: Financial transcripts with best accuracy, 3-4 hour turnaround vs 6+ hours with competitors. URL: https://digital-nirvana.com/investment-research-solutions/""",
-        
-        "learning_management": """Learning Management: Elevate Assessments, Ensure Integrity, Improve Outcomes. Language LSRW and mathematics evaluation, performance assessments, scoring, grading, skill assessments. Services: 1) Comprehensive Academic Assessments - Holistic LSRW evaluations, constructive feedback, fast insightful reports, save educators time. 2) Content Development and Management - Engaging multimedia content, diverse assessments, seamless lifecycle management, align with curricular standards. 3) Advanced Lecture Captioning - AI-powered real-time transcription, captioning, multilingual translation for universities and schools, enhance inclusivity. 4) Adaptive Proctoring - Real-time monitoring, AI behavior analysis, secure in-person and online exams, prevent cheating. URL: https://digital-nirvana.com/learning-management-solutions/""",
-        
-        "clients": """Digital Nirvana Trusted Clients & Success Stories. Major Broadcasters: CBS, Fox Broadcasting, Sinclair Broadcasting, Tier-1 broadcasters globally. Client Success Stories: 1) Hollywood Media-Processing Powerhouse: 24-48 hour turnaround, exceeded expectations, 24/7 operations, ability to accommodate rush orders. 2) Financial Markets: Best accuracy imaginable, 3-4 hour turnaround vs 6+ hours with other providers. 3) Spanish Media Giant: Reduced captioning time from 15 hours to less than 2, game changer with multilingual translation. Proven Results: 75% reduction in content prep time, 99%+ compliance accuracy, significant cost savings.""",
-        
-        "contact": """Contact Digital Nirvana. Website: https://digital-nirvana.com/ Product Pages: MonitorIQ, MetadataIQ, MediaServicesIQ, TranceIQ, Media Enrichment, Cloud Engineering, Data Intelligence, Investment Research, Learning Management. Services: Product demos, custom integration support, training and onboarding, 24/7 technical support for enterprise clients, strategic advice and readiness assessments."""
-    }
-    
-    # Intelligent query matching
+    def _generate_meeting_data(self):
+        """Generate realistic meeting notes and transcripts"""
+        return [
+            {
+                "client_id": 1, "date": "2024-11-20", "type": "Review",
+                "notes": "Discussed market volatility concerns. David worried about recent equity performance. Recommended rebalancing to 60/40 allocation. Action: Send portfolio analysis by Friday.",
+                "concerns_raised": ["market volatility", "portfolio performance"],
+                "commitments_made": ["Send portfolio analysis by Friday", "Review protection needs in Q1 2025"],
+                "follow_up_date": "2024-11-27"
+            },
+            {
+                "client_id": 3, "date": "2024-10-05", "type": "Retirement Planning",
+                "notes": "Robert confirmed retirement in 2026. Discussed withdrawal strategy and sequence of returns risk. Recommended reducing equity allocation to 25%. Mentioned daughter's wedding costs.",
+                "concerns_raised": ["sequence of returns risk", "withdrawal sustainability"],
+                "commitments_made": ["Prepare retirement cashflow model", "Review estate planning needs"],
+                "follow_up_date": "2024-12-15"
+            }
+        ]
+
+    def _generate_recommendations(self):
+        """Generate recommendation history"""
+        return [
+            {
+                "client_id": 1, "date": "2024-01-15", "type": "Portfolio Rebalancing",
+                "recommendation": "Reduce equity allocation from 75% to 65% due to approaching retirement timeline",
+                "rationale": "Client approaching retirement in 10 years, need to reduce sequence of returns risk while maintaining growth potential",
+                "status": "Implemented"
+            },
+            {
+                "client_id": 2, "date": "2023-08-10", "type": "Platform Recommendation",
+                "recommendation": "Transfer ISA to Platform X for lower fees and better fund selection",
+                "rationale": "Current platform charging 1.2% annual fee vs 0.45% on Platform X, better ESG fund selection aligns with client values",
+                "status": "Pending"
+            }
+        ]
+
+    def _generate_compliance_data(self):
+        """Generate compliance tracking items"""
+        return [
+            {"client_id": 1, "type": "Annual Review", "due_date": "2025-01-15", "status": "Due Soon"},
+            {"client_id": 2, "type": "Annual Review", "due_date": "2024-08-10", "status": "Overdue"},
+            {"client_id": 3, "type": "Suitability Review", "due_date": "2025-10-05", "status": "Scheduled"},
+            {"client_id": 6, "type": "Annual Review", "due_date": "2024-05-15", "status": "Overdue"},
+            {"type": "Consumer Duty Documentation", "due_date": "2024-12-31", "status": "In Progress"},
+            {"type": "CASS Reconciliation", "due_date": "2024-12-15", "status": "Pending"}
+        ]
+
+# Initialize mock data
+mock_data = MockDataGenerator()
+
+# =============================================================================
+# Financial Advisor Tool Functions
+# =============================================================================
+
+def analyze_investment_opportunities(query):
+    """Analyze client investment opportunities and risk profiles"""
+    print(f"📊 Analyzing investment opportunities: {query}")
+
+    results = []
     query_lower = query.lower()
-    relevant_info = []
-    
-    # Product-specific queries
-    if any(word in query_lower for word in ['monitoriq', 'monitor iq', 'signal monitoring', 'broadcast monitoring', 'ad verification', 'qoe', 'compliance logging']):
-        relevant_info.append(knowledge_base['monitoriq'])
-    
-    if any(word in query_lower for word in ['metadataiq', 'metadata iq', 'metadata', 'tagging', 'compliance', 'governance', 'avid', 'grass valley']):
-        relevant_info.append(knowledge_base['metadataiq'])
-    
-    if any(word in query_lower for word in ['mediaservicesiq', 'media services', 'chapter marker', 'podcast', 'music licensing', 'ad monitoring']):
-        relevant_info.append(knowledge_base['mediaservicesiq'])
-    
-    if any(word in query_lower for word in ['tranceiq', 'trance iq']):
-        relevant_info.append(knowledge_base['tranceiq'])
-    
-    if any(word in query_lower for word in ['transcription', 'transcribe', 'transcript']):
-        relevant_info.append(knowledge_base['tranceiq'])
-        relevant_info.append(knowledge_base['media_enrichment'])
-    
-    if any(word in query_lower for word in ['caption', 'captioning', 'closed caption', 'live caption']):
-        relevant_info.append(knowledge_base['tranceiq'])
-        relevant_info.append(knowledge_base['media_enrichment'])
-    
-    if any(word in query_lower for word in ['subtitle', 'subtitling', 'subtitles']):
-        relevant_info.append(knowledge_base['tranceiq'])
-        relevant_info.append(knowledge_base['media_enrichment'])
-    
-    if any(word in query_lower for word in ['dubbing', 'dub', 'dubs', 'voiceover', 'voice over', 'subs n dubs', 'subs and dubs']):
-        relevant_info.append(knowledge_base['media_enrichment'])
-    
-    if any(word in query_lower for word in ['translation', 'translate', 'localization', 'localize', 'multilingual']):
-        relevant_info.append(knowledge_base['tranceiq'])
-        relevant_info.append(knowledge_base['media_enrichment'])
-    
-    if any(word in query_lower for word in ['media enrichment', 'enrichment service']):
-        relevant_info.append(knowledge_base['media_enrichment'])
-    
-    if any(word in query_lower for word in ['cloud engineering', 'cloud migration', 'cloud strategy', 'cloud native', 'containerization', 'serverless', 'cloud security']):
-        relevant_info.append(knowledge_base['cloud_engineering'])
-    
-    if any(word in query_lower for word in ['data intelligence', 'data wrangling', 'data labeling', 'data labelling', 'prompt engineering', 'model validation', 'analytics', 'ai model', 'machine learning']):
-        relevant_info.append(knowledge_base['data_intelligence'])
-    
-    if any(word in query_lower for word in ['investment research', 'earnings call', 'financial reporting', 'market intel', 'corporate event', 'financial insight']):
-        relevant_info.append(knowledge_base['investment_research'])
-    
-    if any(word in query_lower for word in ['learning management', 'academic assessment', 'proctoring', 'education', 'e-learning', 'lms', 'learning solution']):
-        relevant_info.append(knowledge_base['learning_management'])
-    
-    if any(word in query_lower for word in ['company', 'about', 'digital nirvana', 'who', 'overview', 'what is']):
-        relevant_info.append(knowledge_base['company'])
-    
-    if any(word in query_lower for word in ['product', 'solution', 'offer', 'service', 'all products']):
-        relevant_info.extend([knowledge_base['company'], knowledge_base['monitoriq'], knowledge_base['metadataiq']])
-    
-    if any(word in query_lower for word in ['client', 'customer', 'cbs', 'fox', 'sinclair', 'who uses']):
-        relevant_info.append(knowledge_base['clients'])
-    
-    if any(word in query_lower for word in ['contact', 'support', 'demo', 'reach', 'sales', 'inquiry']):
-        relevant_info.append(knowledge_base['contact'])
-    
-    if not relevant_info:
-        relevant_info = [knowledge_base['company']]
-    
-    seen = set()
-    unique_info = []
-    for item in relevant_info:
-        if item not in seen:
-            seen.add(item)
-            unique_info.append(item)
-    
-    return " ".join(unique_info)
 
-# Tool definitions
+    # Equity underweight analysis
+    if "underweight" in query_lower and "equit" in query_lower:
+        for client in mock_data.clients:
+            if client["age"] < 50 and client["portfolio_equity_percent"] < 70:
+                results.append(f"🔍 {client['name']} (age {client['age']}) has only {client['portfolio_equity_percent']}% equity allocation - could increase to 70-80% given moderate risk profile and long time horizon")
+            elif client["age"] < 60 and client["portfolio_equity_percent"] < 50:
+                results.append(f"⚠️ {client['name']} (age {client['age']}) significantly underweight equities at {client['portfolio_equity_percent']}% - recommend 60% minimum")
+
+    # ISA allowance analysis
+    elif "isa allowance" in query_lower:
+        for client in mock_data.clients:
+            if client["isa_allowance_remaining"] > 0:
+                results.append(f"💰 {client['name']}: £{client['isa_allowance_remaining']:,} ISA allowance remaining (used £{client['isa_allowance_used']:,})")
+
+    # Annual allowance analysis
+    elif "annual allowance" in query_lower:
+        for client in mock_data.clients:
+            if client["annual_allowance_remaining"] > 10000:
+                results.append(f"🏦 {client['name']}: £{client['annual_allowance_remaining']:,} annual allowance available - consider additional pension contributions")
+
+    # Cash excess analysis
+    elif "cash excess" in query_lower:
+        for client in mock_data.clients:
+            emergency_fund = client["monthly_expenses"] * 6
+            if client["cash_reserves"] > emergency_fund + 10000:
+                excess = client["cash_reserves"] - emergency_fund
+                results.append(f"💵 {client['name']}: £{excess:,} excess cash above 6-month emergency fund (total: £{client['cash_reserves']:,})")
+
+    # Retirement trajectory analysis
+    elif "retirement" in query_lower and ("trajectory" in query_lower or "goal" in query_lower):
+        for client in mock_data.clients:
+            years_to_retirement = client["retirement_goal"] - 2024
+            if years_to_retirement > 0:
+                required_growth = ((client["annual_income"] * 0.7) - (client["net_worth"] * 0.04)) / client["net_worth"]
+                if required_growth > 0.06:
+                    results.append(f"⚠️ {client['name']}: Current trajectory insufficient for retirement goal - needs {required_growth:.1%} annual growth")
+
+    # Protection gaps
+    elif "protection gap" in query_lower:
+        for client in mock_data.clients:
+            if client["children"] > 0 and client["protection_cover"] == "None":
+                results.append(f"🛡️ {client['name']}: No protection cover despite having {client['children']} children - recommend life & income protection")
+            elif "Life" not in client["protection_cover"] and client["annual_income"] > 50000:
+                results.append(f"🔒 {client['name']}: Inadequate protection cover for £{client['annual_income']:,} income")
+
+    # High withdrawal rates
+    elif "withdrawal rate" in query_lower:
+        for client in mock_data.clients:
+            if client["withdrawal_rate"] > 4.0:
+                results.append(f"📉 {client['name']}: {client['withdrawal_rate']}% withdrawal rate exceeds safe withdrawal guidelines (4% max)")
+
+    if not results:
+        results = ["No specific investment opportunities identified based on current query. Try asking about ISA allowances, equity allocation, or protection gaps."]
+
+    return " | ".join(results[:5])  # Limit to 5 results
+
+def get_proactive_client_insights(query):
+    """Get proactive insights for client management"""
+    print(f"🎯 Getting proactive client insights: {query}")
+
+    results = []
+    query_lower = query.lower()
+    current_date = datetime.now()
+
+    # Review scheduling
+    if "review" in query_lower and "month" in query_lower:
+        overdue_clients = []
+        for client in mock_data.clients:
+            if client["last_review"] != "Never":
+                last_review = datetime.strptime(client["last_review"], "%Y-%m-%d")
+                months_since = (current_date - last_review).days / 30
+                if months_since > 12:
+                    overdue_clients.append(f"{client['name']} ({months_since:.0f} months overdue)")
+        if overdue_clients:
+            results.append(f"📅 Overdue reviews: {', '.join(overdue_clients)}")
+
+    # Business owner opportunities
+    elif "business owner" in query_lower:
+        business_clients = [c for c in mock_data.clients if c["business_owner"]]
+        for client in business_clients:
+            if "R&D tax" in query:
+                results.append(f"🏢 {client['name']}: Business owner - check R&D tax credit eligibility")
+            elif "exit planning" in query_lower:
+                results.append(f"💼 {client['name']}: Business owner without exit planning discussed")
+
+    # Education planning
+    elif "university" in query_lower or "education" in query_lower:
+        for client in mock_data.clients:
+            if client["children"] > 0 and not client["education_planning"]:
+                child_age_estimate = 18 - (2024 - client["age"] + 20)  # Rough estimate
+                if child_age_estimate > 0:
+                    results.append(f"🎓 {client['name']}: {client['children']} children, no education planning in place")
+
+    # Estate planning gaps
+    elif "estate planning" in query_lower:
+        for client in mock_data.clients:
+            if client["net_worth"] > 500000 and not client["estate_planning"]:
+                results.append(f"📜 {client['name']}: £{client['net_worth']:,} net worth, no estate planning in place")
+
+    # Birthday opportunities
+    elif "birthday" in query_lower:
+        for client in mock_data.clients:
+            birth_month = client["birthday"].split("-")[1]
+            current_month = current_date.strftime("%m")
+            if birth_month == current_month:
+                results.append(f"🎂 {client['name']}: Birthday this month - opportunity for check-in call")
+
+    # Similar client profiles
+    elif "similar" in query_lower:
+        # Find clients with similar characteristics for cross-selling
+        results.append("🔍 Similar profile analysis: Emma Jackson (29, first-time investor) similar to David Chen's early career phase")
+        results.append("💡 Robert Thompson's retirement strategy could benefit Michael Gurung (early retirement consideration)")
+
+    if not results:
+        results = ["Consider checking for overdue reviews, business owner opportunities, or estate planning gaps."]
+
+    return " | ".join(results[:4])
+
+def track_compliance_requirements(query):
+    """Track compliance and regulatory requirements"""
+    print(f"📋 Tracking compliance requirements: {query}")
+
+    results = []
+    query_lower = query.lower()
+
+    # FCA Consumer Duty
+    if "consumer duty" in query_lower or "fca" in query_lower:
+        results.append("🏛️ Consumer Duty Status: 4 clients requiring value demonstration documentation")
+        results.append("📊 Annual reviews: 2 overdue (Sarah Williams, Lisa Patel)")
+        results.append("✅ Ongoing monitoring: Portfolio performance tracking in place for all active clients")
+
+    # Documentation requests
+    elif "document" in query_lower and "waiting" in query_lower:
+        results.append("📄 Outstanding documents: Emma Jackson (bank statements), Sarah Williams (business accounts)")
+        results.append("⏰ Longest outstanding: 45 days (Sarah Williams - business valuation)")
+
+    # Recommendation tracking by client
+    elif any(name.lower() in query_lower for name in ["david chen", "chen"]):
+        client_recs = [r for r in mock_data.recommendations if r["client_id"] == 1]
+        for rec in client_recs:
+            results.append(f"💼 {rec['date']}: {rec['recommendation']} | Rationale: {rec['rationale']}")
+
+    # Risk discussions
+    elif "risk" in query_lower and ("discussion" in query_lower or "conversation" in query_lower):
+        results.append("🎯 Williams family risk discussion (2023-08): 'Comfortable with volatility for long-term growth, prefer ESG investments'")
+        results.append("⚠️ Robert Thompson risk review (2024-10): 'Concerned about sequence of returns, prefer conservative approach near retirement'")
+
+    # Platform recommendations
+    elif "platform" in query_lower:
+        platform_recs = [r for r in mock_data.recommendations if "Platform" in r["recommendation"]]
+        for rec in platform_recs:
+            results.append(f"🖥️ {rec['date']}: Recommended Platform X for client {rec['client_id']} - {rec['rationale']}")
+
+    # Market volatility concerns
+    elif "volatility" in query_lower:
+        concerned_clients = [c for c in mock_data.clients if "market volatility" in c["concerns"]]
+        for client in concerned_clients:
+            results.append(f"📈 {client['name']}: Expressed market volatility concerns in recent meetings")
+
+    if not results:
+        results = [f"No specific compliance items found for query. Available: Consumer Duty tracking, document requests, recommendation history."]
+
+    return " | ".join(results[:4])
+
+def analyze_business_metrics(query):
+    """Analyze business performance and client metrics"""
+    print(f"📈 Analyzing business metrics: {query}")
+
+    results = []
+    query_lower = query.lower()
+
+    # Revenue analysis
+    if "revenue" in query_lower:
+        total_revenue = sum(c["revenue_generated"] for c in mock_data.clients)
+        high_value = [c for c in mock_data.clients if c["revenue_generated"] > 10000]
+        results.append(f"💰 Total revenue: £{total_revenue:,} | High-value clients: {len(high_value)}")
+
+        # Service efficiency
+        if "service time" in query_lower or "time" in query_lower:
+            for client in high_value:
+                efficiency = client["revenue_generated"] / client["service_time_hours"] if client["service_time_hours"] > 0 else 0
+                results.append(f"⏱️ {client['name']}: £{efficiency:.0f}/hour efficiency")
+
+    # Client demographics
+    elif "retirement" in query_lower and "percentage" in query_lower:
+        approaching_retirement = len([c for c in mock_data.clients if (c["retirement_goal"] - 2024) <= 5])
+        total_clients = len(mock_data.clients)
+        percentage = (approaching_retirement / total_clients) * 100
+        results.append(f"📊 {approaching_retirement}/{total_clients} clients ({percentage:.0f}%) retiring within 5 years")
+
+    # Service utilization
+    elif "services" in query_lower and ("use" in query_lower or "most" in query_lower):
+        results.append("🔝 Most used services by high-value clients: Portfolio reviews (100%), Retirement planning (80%), Estate planning (60%)")
+        results.append("📋 Least used: Protection reviews (20%), Education planning (40%)")
+
+    # Client satisfaction patterns
+    elif "satisfied" in query_lower or "common" in query_lower:
+        results.append("😊 Long-term satisfied clients common factors: Regular communication, proactive advice, comprehensive planning")
+        results.append("💡 High satisfaction correlates with: Net worth >£500k, 5+ year relationships, complete planning suite")
+
+    # Conversion rates
+    elif "conversion" in query_lower or "referral" in query_lower:
+        results.append("📊 Conversion rates: Client referrals (85%), Professional referrals (65%), Cold outreach (15%)")
+        results.append("🎯 Best performing source: Existing client referrals")
+
+    # Recommendation pushback
+    elif "pushback" in query_lower or "resistance" in query_lower:
+        results.append("❌ Most pushback: Platform transfers (cost concerns), Equity increases (risk aversion)")
+        results.append("✅ Least resistance: Cash management, Protection reviews, ISA maximization")
+
+    if not results:
+        results = ["Ask about revenue analysis, client demographics, service utilization, or conversion rates for detailed business insights."]
+
+    return " | ".join(results[:4])
+
+def generate_follow_up_actions(query):
+    """Generate follow-up actions and commitments"""
+    print(f"✅ Generating follow-up actions: {query}")
+
+    results = []
+    query_lower = query.lower()
+
+    # Draft follow-up emails
+    if "draft" in query_lower and "email" in query_lower:
+        results.append("📧 DRAFT - David Chen Follow-up: 'Hi David, Following our discussion about market volatility, I've attached the portfolio analysis showing your current allocation vs. target. The rebalancing to 60/40 would reduce volatility by ~15% while maintaining growth potential. Let's schedule a call this week to discuss. Best regards.'")
+
+    # Open action items
+    elif "action item" in query_lower or "open" in query_lower:
+        results.append("📋 Open Actions: Send David Chen portfolio analysis (due 2024-11-27)")
+        results.append("🔄 Pending: Sarah Williams platform transfer documentation")
+        results.append("📅 Scheduled: Robert Thompson retirement cashflow model (due 2024-12-15)")
+
+    # Waiting for client responses
+    elif "waiting" in query_lower:
+        results.append("⏳ Waiting for: Emma Jackson (decision on first ISA), Michael Gurung (estate planning meeting confirmation)")
+        results.append("📞 Overdue responses: Sarah Williams (platform transfer approval - 30 days)")
+
+    # Overdue commitments
+    elif "overdue" in query_lower:
+        results.append("🚨 Overdue commitments: Lisa Patel annual review (6 months overdue)")
+        results.append("⚠️ Urgent: Sarah Williams business owner pension review (scheduled for August)")
+
+    if not results:
+        results = ["No specific follow-up actions found. Available: Draft emails, open action items, client responses needed."]
+
+    return " | ".join(results[:3])
+
+# =============================================================================
+# Tool Definitions for Azure OpenAI
+# =============================================================================
+
 tools = [
     {
         "type": "function",
         "function": {
-            "name": "get_weather",
-            "description": "Get current weather for a city",
+            "name": "analyze_investment_opportunities",
+            "description": "Analyze client investment opportunities including equity allocation, ISA/pension allowances, cash management, protection gaps, withdrawal rates, and retirement planning",
             "parameters": {
                 "type": "object",
-                "properties": {"city": {"type": "string"}},
-                "required": ["city"]
+                "properties": {"query": {"type": "string", "description": "The investment analysis query"}},
+                "required": ["query"]
             }
         }
     },
     {
         "type": "function",
         "function": {
-            "name": "get_student_profiles", 
-            "description": "Get all student profiles from database",
-            "parameters": {"type": "object", "properties": {}}
+            "name": "get_proactive_client_insights",
+            "description": "Get proactive client management insights including review scheduling, business owner opportunities, education planning, estate planning, birthdays, and similar client profiles",
+            "parameters": {
+                "type": "object",
+                "properties": {"query": {"type": "string", "description": "The proactive insight query"}},
+                "required": ["query"]
+            }
         }
     },
     {
         "type": "function",
         "function": {
-            "name": "get_digital_nirvana_info",
-            "description": "Get comprehensive information about Digital Nirvana and ALL their products/services including MonitorIQ, MetadataIQ, MediaServicesIQ, TranceIQ, Media Enrichment, Cloud Engineering, Data Intelligence, Investment Research, Learning Management. Use for ANY question about Digital Nirvana.",
+            "name": "track_compliance_requirements",
+            "description": "Track compliance and regulatory requirements including Consumer Duty, documentation requests, recommendation tracking, risk discussions, and regulatory deadlines",
             "parameters": {
                 "type": "object",
-                "properties": {
-                    "query": {"type": "string", "description": "The user's question about Digital Nirvana"}
-                },
+                "properties": {"query": {"type": "string", "description": "The compliance tracking query"}},
+                "required": ["query"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "analyze_business_metrics",
+            "description": "Analyze business performance including revenue analysis, client demographics, service utilization, satisfaction patterns, conversion rates, and recommendation effectiveness",
+            "parameters": {
+                "type": "object",
+                "properties": {"query": {"type": "string", "description": "The business analytics query"}},
+                "required": ["query"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "generate_follow_up_actions",
+            "description": "Generate follow-up actions including draft emails, open action items, waiting for client responses, and overdue commitments",
+            "parameters": {
+                "type": "object",
+                "properties": {"query": {"type": "string", "description": "The follow-up action query"}},
                 "required": ["query"]
             }
         }
@@ -201,51 +499,68 @@ tools = [
 ]
 
 def get_ai_response(user_message):
-    """Azure OpenAI response handler - Streamlit compatible version"""
-    print(f"You: {user_message}")
-    
+    """Azure OpenAI response handler for Financial Advisor Chatbot"""
+    print(f"Advisor Query: {user_message}")
+
     client = AzureOpenAI(
         api_key=AZURE_OPENAI_API_KEY,
         api_version=AZURE_OPENAI_API_VERSION,
         azure_endpoint=AZURE_OPENAI_ENDPOINT
     )
-    
-    system_prompt = """You are a highly knowledgeable AI assistant specializing in Digital Nirvana's complete product portfolio and services. For ANY question about Digital Nirvana, their products, services, or solutions, ALWAYS use get_digital_nirvana_info tool. Provide comprehensive, detailed responses based on retrieved knowledge. Highlight key benefits, features, and competitive advantages."""
+
+    system_prompt = """You are an advanced AI assistant designed specifically for UK Independent Financial Advisors (IFAs). You help advisors be more proactive, efficient, and compliant while managing 150-250 client relationships.
+
+Your capabilities include:
+🔍 INVESTMENT ANALYSIS: Identify underweight equity positions, unused allowances, cash excess, protection gaps, withdrawal rates
+📊 PROACTIVE INSIGHTS: Track review schedules, business owner opportunities, education planning, estate planning gaps
+📋 COMPLIANCE: Monitor Consumer Duty requirements, documentation, recommendation tracking
+📈 BUSINESS ANALYTICS: Revenue analysis, client demographics, service efficiency, satisfaction patterns
+✅ FOLLOW-UP: Draft emails, track action items, manage commitments
+
+Always provide specific, actionable insights that help advisors demonstrate value to clients while staying FCA compliant. Use the available tools to access comprehensive client data and generate personalized recommendations."""
 
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_message}
     ]
-    
+
     while True:
         response = client.chat.completions.create(
             model=AZURE_OPENAI_DEPLOYMENT_NAME,
             messages=messages,
-            tools=tools
+            tools=tools,
+            temperature=0.7
         )
-        
+
         if not response.choices[0].message.tool_calls:
             answer = response.choices[0].message.content
-            print(f"AI: {answer}")
+            print(f"Advisory AI: {answer}")
             return answer
-        
+
         messages.append(response.choices[0].message)
-        
+
         for tool_call in response.choices[0].message.tool_calls:
             tool_name = tool_call.function.name
-            print(f"🛠️ AI is using tool: {tool_name}")
-            
-            if tool_name == "get_weather":
-                city = json.loads(tool_call.function.arguments)["city"]
-                result = get_weather(city)
-            elif tool_name == "get_student_profiles":
-                result = get_student_profiles()
-            elif tool_name == "get_digital_nirvana_info":
+            print(f"🛠️ Using tool: {tool_name}")
+
+            if tool_name == "analyze_investment_opportunities":
                 query = json.loads(tool_call.function.arguments)["query"]
-                result = get_digital_nirvana_info(query)
+                result = analyze_investment_opportunities(query)
+            elif tool_name == "get_proactive_client_insights":
+                query = json.loads(tool_call.function.arguments)["query"]
+                result = get_proactive_client_insights(query)
+            elif tool_name == "track_compliance_requirements":
+                query = json.loads(tool_call.function.arguments)["query"]
+                result = track_compliance_requirements(query)
+            elif tool_name == "analyze_business_metrics":
+                query = json.loads(tool_call.function.arguments)["query"]
+                result = analyze_business_metrics(query)
+            elif tool_name == "generate_follow_up_actions":
+                query = json.loads(tool_call.function.arguments)["query"]
+                result = generate_follow_up_actions(query)
             else:
-                result = "Unknown tool"
-            
+                result = "Tool not found"
+
             messages.append({
                 "role": "tool",
                 "content": result,
@@ -253,14 +568,15 @@ def get_ai_response(user_message):
             })
 
 if __name__ == "__main__":
-    print("🤖 Enhanced Digital Nirvana Assistant Started!")
+    print("🤖 Financial Advisor AI Assistant Started!")
+    print("💡 Try asking about: client reviews, investment opportunities, compliance tracking, or business analytics")
     print("(Type 'quit' to exit)\n")
-    
+
     while True:
-        user_input = input("\nYou: ")
+        user_input = input("\nAdvisor: ")
         if user_input.lower() in ['quit', 'exit', 'bye']:
-            print("👋 Goodbye!")
+            print("👋 Advisory session ended!")
             break
-        
+
         response = get_ai_response(user_input)
         print()
