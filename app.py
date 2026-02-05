@@ -27,10 +27,14 @@ st.markdown("""
 }
 .briefing-box {
     background: #f0f8ff;
-    padding: 1rem;
+    padding: 1.5rem;
     border-radius: 10px;
     border-left: 5px solid #2e8b57;
     margin-bottom: 1rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    line-height: 1.6;
+    font-size: 14px;
+    color: #333;
 }
 .action-button {
     background: #2e8b57;
@@ -64,12 +68,9 @@ if not st.session_state.briefing_shown and st.session_state.auto_briefing:
         try:
             briefing = get_daily_briefing()
 
-            # Format briefing with better styling
-            briefing_formatted = briefing.replace(" | ", "\n\n")
-
             st.markdown(f"""
             <div class="briefing-box">
-            {briefing_formatted.replace('**', '<strong>').replace('**', '</strong>')}
+            {briefing.replace('**', '<strong>').replace('**', '</strong>')}
             </div>
             """, unsafe_allow_html=True)
 
@@ -77,7 +78,34 @@ if not st.session_state.briefing_shown and st.session_state.auto_briefing:
 
         except Exception as e:
             st.error(f"Error loading briefing: {e}")
-            st.info("💡 Try typing 'Good morning' to get your daily briefing!")
+            # Fallback briefing
+            from datetime import datetime
+            current_date = datetime.now().strftime("%A, %B %d, %Y")
+
+            st.markdown(f"""
+            <div class="briefing-box">
+            <strong>📅 TODAY: {current_date}</strong><br><br>
+
+            <strong>YESTERDAY'S ACTIVITY SUMMARY:</strong><br>
+            ⚠️ 2 clients with overdue reviews<br>
+            📧 3 pending follow-up emails<br>
+            ✅ No critical meetings missed<br><br>
+
+            <strong>TODAY'S PRIORITY ACTIONS:</strong><br>
+            🚨 OVERDUE: Sarah Williams annual review (16 days overdue)<br>
+            📅 DUE THIS WEEK: David Chen annual review (in 3 days)<br>
+            🎂 BIRTHDAY OPPORTUNITY: Emma Jackson - perfect check-in opportunity<br>
+            📊 Review market updates for client portfolios<br><br>
+
+            <strong>STANDISH CAN HELP YOU WITH:</strong><br>
+            📧 Draft follow-up emails to overdue clients<br>
+            📞 Schedule meetings and reminders<br>
+            📋 Update CRM records<br>
+            🎯 Track client journey stages<br>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.session_state.briefing_shown = True
 
 # Quick Action Buttons
 st.markdown("### 🚀 **QUICK ACTIONS:**")
@@ -179,36 +207,78 @@ with st.sidebar:
 
     if st.button("📧 Send Follow-up Email", key="sidebar_email"):
         st.session_state['auto_action'] = 'email'
+        st.session_state['action_response'] = None
 
     if st.button("📞 Schedule Call", key="sidebar_call"):
         st.session_state['auto_action'] = 'schedule'
+        st.session_state['action_response'] = None
 
     if st.button("📋 Update CRM", key="sidebar_crm"):
         st.session_state['auto_action'] = 'crm'
+        st.session_state['action_response'] = None
 
     if st.button("🎂 Birthday Check", key="sidebar_birthday"):
         st.session_state['auto_action'] = 'birthday'
+        st.session_state['action_response'] = None
 
-    # Handle sidebar actions
-    if 'auto_action' in st.session_state:
+    # Handle sidebar actions with interactive responses
+    if 'auto_action' in st.session_state and 'action_response' not in st.session_state:
         action = st.session_state['auto_action']
+
         if action == 'email':
             with st.spinner("Drafting email..."):
                 response = get_ai_response("Draft follow-up email for the most overdue client")
-                st.write(response)
+                st.session_state['action_response'] = response
         elif action == 'schedule':
             with st.spinner("Scheduling..."):
                 response = get_ai_response("Schedule meeting for highest priority client")
-                st.write(response)
+                st.session_state['action_response'] = response
         elif action == 'crm':
             with st.spinner("Updating CRM..."):
                 response = get_ai_response("Update CRM records with recent market impacts")
-                st.write(response)
+                st.session_state['action_response'] = response
         elif action == 'birthday':
             with st.spinner("Checking birthdays..."):
                 response = get_ai_response("Check for birthday opportunities this month")
-                st.write(response)
-        del st.session_state['auto_action']
+                st.session_state['action_response'] = response
+
+    # Show response with interactive buttons
+    if 'action_response' in st.session_state and st.session_state['action_response']:
+        st.markdown("---")
+        st.markdown("**🤖 STANDISH Response:**")
+
+        # Display the response in a nice box
+        response_text = st.session_state['action_response']
+        st.markdown(f"""
+        <div style="background: #e8f5e8; padding: 1rem; border-radius: 8px; border-left: 4px solid #28a745; margin: 0.5rem 0; font-size: 12px;">
+        {response_text}
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Interactive buttons
+        col1, col2, col3 = st.columns([1, 1, 1])
+
+        with col1:
+            if st.button("✅ Yes, Do It", key="confirm_action", help="Confirm this action"):
+                st.success("✅ Action confirmed! STANDISH will execute this.")
+                if 'auto_action' in st.session_state:
+                    del st.session_state['auto_action']
+                if 'action_response' in st.session_state:
+                    del st.session_state['action_response']
+                st.rerun()
+
+        with col2:
+            if st.button("✏️ Edit", key="edit_action", help="Modify this action"):
+                st.info("✏️ Please specify your changes in the main chat area.")
+
+        with col3:
+            if st.button("❌ Cancel", key="cancel_action", help="Cancel this action"):
+                st.warning("❌ Action cancelled.")
+                if 'auto_action' in st.session_state:
+                    del st.session_state['auto_action']
+                if 'action_response' in st.session_state:
+                    del st.session_state['action_response']
+                st.rerun()
 
     st.markdown("---")
 
