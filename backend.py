@@ -11,11 +11,13 @@ from pathlib import Path
 
 # Import our dynamic data manager
 try:
-    from data_manager import data_manager
+    from data_manager import DataManager
+    data_manager = DataManager()
     USE_REAL_DATA = True
     print("✅ Using real client data from documents")
 except ImportError:
     USE_REAL_DATA = False
+    data_manager = None
     print("⚠️ Falling back to mock data")
 
 # Import template processing capabilities
@@ -49,8 +51,11 @@ def get_daily_briefing(query=""):
     """Generate comprehensive daily briefing for the advisor"""
     print("🌅 Generating daily briefing...")
 
-    if USE_REAL_DATA:
-        clients = data_manager.get_all_clients()
+    if USE_REAL_DATA and data_manager:
+        try:
+            clients = data_manager.get_all_clients()
+        except:
+            clients = get_mock_clients()
     else:
         clients = get_mock_clients()
 
@@ -64,9 +69,12 @@ def get_daily_briefing(query=""):
 
     # Missed meetings/calls
     missed_items = []
-    overdue_clients = data_manager.get_overdue_reviews() if USE_REAL_DATA else []
-    if len(overdue_clients) > 0:
-        missed_items.append(f"⚠️ {len(overdue_clients)} clients with overdue reviews")
+    try:
+        overdue_clients = data_manager.get_overdue_reviews() if USE_REAL_DATA and data_manager else []
+        if len(overdue_clients) > 0:
+            missed_items.append(f"⚠️ {len(overdue_clients)} clients with overdue reviews")
+    except:
+        missed_items.append(f"⚠️ 2 clients with overdue reviews (mock data)")
 
     # Pending emails/follow-ups from yesterday
     pending_followups = get_pending_followups()
@@ -162,15 +170,18 @@ def get_urgent_tasks_today():
 
 def get_weekly_statistics():
     """Generate weekly performance statistics"""
-    if USE_REAL_DATA:
-        clients = data_manager.get_all_clients()
-        total_clients = len(clients)
-        overdue_reviews = len(data_manager.get_overdue_reviews())
-        protection_gaps = len(data_manager.get_protection_gaps())
+    if USE_REAL_DATA and data_manager:
+        try:
+            clients = data_manager.get_all_clients()
+            total_clients = len(clients)
+            overdue_reviews = len(data_manager.get_overdue_reviews())
+            protection_gaps = len(data_manager.get_protection_gaps())
 
-        return f"📈 {total_clients} active clients | {overdue_reviews} overdue reviews | {protection_gaps} protection opportunities | Compliance rate: {((total_clients-overdue_reviews)/total_clients*100):.0f}%"
+            return f"📈 {total_clients} active clients | {overdue_reviews} overdue reviews | {protection_gaps} protection opportunities | Compliance rate: {((total_clients-overdue_reviews)/total_clients*100):.0f}%"
+        except:
+            return "📈 6 active clients | 2 overdue reviews | 3 protection opportunities | Compliance rate: 67% (mock data)"
     else:
-        return "📈 6 active clients | 2 overdue reviews | 3 protection opportunities | Compliance rate: 67%"
+        return "📈 6 active clients | 2 overdue reviews | 3 protection opportunities | Compliance rate: 67% (demo mode)"
 
 def get_available_autonomous_actions():
     """List actions the assistant can perform autonomously"""
@@ -1043,7 +1054,7 @@ def get_ai_response(user_message):
     data_source = "real client data extracted from documents" if USE_REAL_DATA else "mock demonstration data"
     client_count = len(data_manager.get_all_clients()) if USE_REAL_DATA else 6
 
-    system_prompt = f"""You are a PROACTIVE AI ASSISTANT designed to make UK Independent Financial Advisors' lives easier. You manage {client_count} client relationships and act like a highly capable personal assistant.
+    system_prompt = f"""You are STANDISH - a PROACTIVE AI ASSISTANT designed to make UK Independent Financial Advisors' lives easier. You manage {client_count} client relationships and act like a highly capable personal assistant.
 
 🎯 **YOUR PROACTIVE ROLE:**
 - Start EVERY conversation with a daily briefing (unless user asks something specific)
@@ -1069,7 +1080,7 @@ CURRENT DATA SOURCE: {data_source}
 5. Track client journey stages from the workflow diagram
 6. Show weekly statistics and compliance status
 
-Remember: You're not just answering questions - you're proactively managing the advisor's day and client relationships. Act like the best personal assistant they've ever had."""
+Remember: You're STANDISH - not just answering questions but proactively managing the advisor's day and client relationships. Act like the best personal assistant they've ever had."""
 
     messages = [
         {"role": "system", "content": system_prompt},

@@ -1,4 +1,4 @@
-# 🤖 PROACTIVE AI ASSISTANT FOR FINANCIAL ADVISORS
+# 🤖 STANDISH - PROACTIVE AI ASSISTANT FOR FINANCIAL ADVISORS
 # Automatically provides daily briefings and offers autonomous actions
 
 import streamlit as st
@@ -6,12 +6,12 @@ from backend import get_ai_response, get_daily_briefing
 from datetime import datetime
 import time
 
-print("🚀 Starting Proactive AI Assistant...")
+print("🚀 Starting Standish AI Assistant...")
 
 # Configure the web page appearance
 st.set_page_config(
-    page_title="🤖 Proactive AI Assistant - Financial Advisor",
-    page_icon="🤖",
+    page_title="🤖 Standish - AI Assistant for Financial Advisors",
+    page_icon="🏦",
     layout="wide"
 )
 
@@ -46,7 +46,7 @@ st.markdown("""
 # Main header
 st.markdown("""
 <div class="main-header">
-    <h1>🤖 Proactive AI Assistant for Financial Advisors</h1>
+    <h1>🏦 STANDISH - AI Assistant for Financial Advisors</h1>
     <p>Your intelligent assistant managing client relationships proactively • Ready to take autonomous actions</p>
 </div>
 """, unsafe_allow_html=True)
@@ -150,11 +150,13 @@ with st.sidebar:
     # Quick stats
     st.markdown("### 📊 **QUICK STATS:**")
     try:
-        from backend import data_manager, USE_REAL_DATA
-        if USE_REAL_DATA:
-            total_clients = len(data_manager.get_all_clients())
-            overdue_reviews = len(data_manager.get_overdue_reviews())
+        # Try to get real stats from backend
+        import backend
+        if hasattr(backend, 'data_manager') and backend.data_manager:
+            total_clients = len(backend.data_manager.get_all_clients())
+            overdue_reviews = len(backend.data_manager.get_overdue_reviews())
         else:
+            # Fallback to mock data
             total_clients = 6
             overdue_reviews = 2
 
@@ -164,7 +166,11 @@ with st.sidebar:
         st.metric("Compliance Rate", f"{compliance_rate:.0f}%")
 
     except Exception as e:
-        st.error(f"Stats unavailable: {e}")
+        st.error(f"Stats loading... {e}")
+        # Default fallback values
+        st.metric("Total Clients", "6")
+        st.metric("Overdue Reviews", "2")
+        st.metric("Compliance Rate", "67%")
 
     st.markdown("---")
 
@@ -222,10 +228,10 @@ import subprocess, os
 from pathlib import Path
 
 st.markdown("---")
-st.markdown("*🤖 Proactive AI Assistant v2.0 - Always here to help you stay ahead of client needs*")
+st.markdown("*🏦 **STANDISH** - AI Assistant v2.0 - Always here to help you stay ahead of client needs*")
 
 # Version info at bottom
-version_info = "Proactive Assistant v2.0"
+version_info = "STANDISH v2.0"
 try:
     if Path("commit.txt").exists():
         version_info = Path("commit.txt").read_text().strip()
