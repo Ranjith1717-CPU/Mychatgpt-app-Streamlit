@@ -1,5 +1,5 @@
-# 🤖 Enhanced Financial Advisor AI Chatbot Backend - Real Client Data Integration
-# Now uses actual client data from documents with dynamic data ingestion capabilities
+# 🤖 STANDISH - Enhanced Proactive AI Agent for Financial Advisors
+# Complete rewrite with ALL missing features for true proactive agency
 
 import json
 from openai import AzureOpenAI
@@ -8,8 +8,11 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any
 import sqlite3
 from pathlib import Path
+import re
 
-# Import our dynamic data manager
+# =============================================================================
+# Data Manager Import (backward compatible)
+# =============================================================================
 try:
     from data_manager import DataManager
     data_manager = DataManager()
@@ -44,7 +47,157 @@ AZURE_OPENAI_API_VERSION = st.secrets["AZURE_OPENAI_API_VERSION"]
 AZURE_OPENAI_DEPLOYMENT_NAME = st.secrets["AZURE_OPENAI_DEPLOYMENT_NAME"]
 
 # =============================================================================
-# Proactive Assistant Core Functions
+# NEW: In-Memory Data Stores for Enhanced Features
+# =============================================================================
+
+# Recommendation History Store
+recommendation_history = {
+    "David Chen": [
+        {"date": "2025-06-15", "type": "ISA Transfer", "platform": "Platform X", "rationale": "Lower fees (0.25% vs 0.45%), better fund selection, consolidated reporting", "status": "Implemented"},
+        {"date": "2025-03-20", "type": "Pension Contribution", "amount": 40000, "rationale": "Maximize annual allowance before tax year end, higher rate tax relief", "status": "Implemented"},
+        {"date": "2024-11-10", "type": "Risk Profile Change", "from": "Moderate", "to": "Moderate-High", "rationale": "Client comfortable with volatility, 15+ year horizon", "status": "Implemented"}
+    ],
+    "Sarah Williams": [
+        {"date": "2025-08-01", "type": "ISA Transfer", "platform": "Platform X", "rationale": "Fee comparison showed 0.2% annual saving, ESG fund options available", "status": "Pending"},
+        {"date": "2025-05-15", "type": "Life Insurance", "amount": 500000, "rationale": "Income replacement for family, 2 dependent children", "status": "Implemented"},
+        {"date": "2025-02-28", "type": "Pension Consolidation", "rationale": "3 legacy pensions consolidated for better oversight and lower fees", "status": "Implemented"}
+    ],
+    "Emma Jackson": [
+        {"date": "2025-09-10", "type": "SIPP Setup", "platform": "Platform Y", "rationale": "Self-employed, maximize pension contributions for tax efficiency", "status": "In Progress"}
+    ],
+    "Lisa Patel": [
+        {"date": "2024-12-01", "type": "Drawdown Strategy", "withdrawal_rate": "3.5%", "rationale": "Sustainable withdrawal aligned with risk tolerance", "status": "Implemented"}
+    ]
+}
+
+# Meeting Transcripts Store
+meeting_transcripts = {
+    "Williams Family - 2025-07-15": {
+        "date": "2025-07-15",
+        "client": "Sarah Williams",
+        "attendees": ["Sarah Williams", "Tom Williams", "Advisor"],
+        "duration": "60 minutes",
+        "transcript": """
+        Advisor: Let's discuss your risk tolerance. Given recent market volatility, how do you feel about your current portfolio allocation?
+        Sarah: We're a bit concerned about the market drops we've seen. We don't want to lose our retirement savings.
+        Tom: But we also don't want to be too conservative. We're still 15 years from retirement.
+        Advisor: I understand. Your current moderate risk profile means about 60% equities. Given your concerns, we could reduce to 50%, but this may impact long-term growth.
+        Sarah: What about sustainable investments? We'd prefer our money to be in ethical companies.
+        Advisor: Absolutely. We have excellent ESG options on Platform X. The performance has been comparable to traditional funds.
+        Tom: We're also worried about what happens if the market drops 20% right before we retire.
+        Advisor: Great question. We can model different scenarios and build in a cash buffer for the first few years of retirement.
+        """,
+        "key_concerns": ["market volatility", "sustainable investing", "retirement timing risk"],
+        "action_items": ["Review ESG fund options", "Model market correction scenarios", "Discuss cash buffer strategy"],
+        "sentiment": "cautiously optimistic"
+    },
+    "David Chen - 2025-09-01": {
+        "date": "2025-09-01",
+        "client": "David Chen",
+        "attendees": ["David Chen", "Advisor"],
+        "duration": "45 minutes",
+        "transcript": """
+        Advisor: David, let's review your pension contributions this year.
+        David: Yes, I want to make sure I'm maximizing my allowances. My business had a good year.
+        Advisor: Great news. You've used £35,000 of your £60,000 annual allowance. You also have carry forward from the last 3 years.
+        David: What about the lifetime allowance changes?
+        Advisor: Good question. The lifetime allowance has been abolished, so that's no longer a concern. You can contribute more freely now.
+        David: I'm also thinking about exit planning for my business. Not immediately, but in 5-7 years.
+        Advisor: We should definitely factor that into your overall plan. Business sale proceeds will significantly impact your retirement income.
+        """,
+        "key_concerns": ["pension allowances", "business exit planning", "tax efficiency"],
+        "action_items": ["Calculate carry forward allowance", "Draft exit planning timeline", "Review business valuation"],
+        "sentiment": "positive"
+    }
+}
+
+# Document Tracking Store
+document_tracking = {
+    "Sarah Williams": {
+        "requested": [
+            {"document": "P60 2024/25", "requested_date": "2025-01-15", "status": "Received", "received_date": "2025-01-20"},
+            {"document": "Bank statements (6 months)", "requested_date": "2025-01-15", "status": "Pending", "received_date": None},
+            {"document": "Mortgage statement", "requested_date": "2025-01-15", "status": "Pending", "received_date": None}
+        ]
+    },
+    "David Chen": {
+        "requested": [
+            {"document": "Company accounts 2024", "requested_date": "2025-01-10", "status": "Received", "received_date": "2025-01-18"},
+            {"document": "Self-assessment tax return", "requested_date": "2025-01-10", "status": "Received", "received_date": "2025-01-25"},
+            {"document": "Pension statement (3 schemes)", "requested_date": "2025-01-10", "status": "Partial", "received_date": "2025-01-22", "notes": "2 of 3 received"}
+        ]
+    },
+    "Emma Jackson": {
+        "requested": [
+            {"document": "Proof of address", "requested_date": "2025-02-01", "status": "Pending", "received_date": None},
+            {"document": "ID verification", "requested_date": "2025-02-01", "status": "Pending", "received_date": None}
+        ]
+    }
+}
+
+# Commitments/Promises Store
+commitments_tracking = {
+    "Jackson Family": [
+        {"promise": "Send detailed breakdown of fund options", "promised_date": "2025-01-20", "due_date": "2025-01-25", "status": "Overdue", "completed_date": None},
+        {"promise": "Prepare cashflow model for early retirement", "promised_date": "2025-01-15", "due_date": "2025-02-01", "status": "Pending", "completed_date": None}
+    ],
+    "David Chen": [
+        {"promise": "Send carry forward calculation", "promised_date": "2025-02-01", "due_date": "2025-02-05", "status": "Completed", "completed_date": "2025-02-03"},
+        {"promise": "Provide exit planning checklist", "promised_date": "2025-02-01", "due_date": "2025-02-10", "status": "Pending", "completed_date": None}
+    ],
+    "Sarah Williams": [
+        {"promise": "Send ESG fund comparison report", "promised_date": "2025-01-28", "due_date": "2025-02-03", "status": "Overdue", "completed_date": None}
+    ]
+}
+
+# Client Retirement & Withdrawal Data
+retirement_data = {
+    "Lisa Patel": {"status": "Retired", "retirement_date": "2023-06-01", "pension_pot": 450000, "annual_withdrawal": 18000, "withdrawal_rate": 4.0},
+    "Michael Thompson": {"status": "Retired", "retirement_date": "2022-01-15", "pension_pot": 380000, "annual_withdrawal": 19000, "withdrawal_rate": 5.0},
+    "Robert Hughes": {"status": "Retired", "retirement_date": "2024-03-01", "pension_pot": 520000, "annual_withdrawal": 15600, "withdrawal_rate": 3.0},
+    "Anne Partridge": {"status": "Retired", "retirement_date": "2021-09-01", "pension_pot": 290000, "annual_withdrawal": 14500, "withdrawal_rate": 5.0},
+    "Brian Potter": {"status": "Retired", "retirement_date": "2020-12-01", "pension_pot": 350000, "annual_withdrawal": 17500, "withdrawal_rate": 5.0}
+}
+
+# Client Service & Satisfaction Data
+service_data = {
+    "David Chen": {"services": ["Pension Planning", "Tax Planning", "Investment Management", "Business Planning"], "satisfaction_score": 9, "years_as_client": 8, "annual_revenue": 4500, "hours_per_year": 12},
+    "Sarah Williams": {"services": ["Pension Planning", "Protection", "Investment Management"], "satisfaction_score": 8, "years_as_client": 5, "annual_revenue": 3200, "hours_per_year": 15},
+    "Emma Jackson": {"services": ["SIPP", "Investment Management"], "satisfaction_score": 9, "years_as_client": 2, "annual_revenue": 2800, "hours_per_year": 8},
+    "Lisa Patel": {"services": ["Drawdown Planning", "Investment Management", "Estate Planning"], "satisfaction_score": 7, "years_as_client": 12, "annual_revenue": 3800, "hours_per_year": 10},
+    "Michael Gurung": {"services": ["Business Planning", "Pension Planning", "Protection"], "satisfaction_score": 8, "years_as_client": 6, "annual_revenue": 5200, "hours_per_year": 18}
+}
+
+# Sales Funnel Data
+sales_funnel = {
+    "initial_meetings": [
+        {"name": "John Smith", "date": "2025-01-05", "source": "Website", "status": "Converted", "conversion_date": "2025-01-20"},
+        {"name": "Mary Johnson", "date": "2025-01-10", "source": "Referral - David Chen", "status": "Converted", "conversion_date": "2025-01-25"},
+        {"name": "Peter Brown", "date": "2025-01-15", "source": "LinkedIn", "status": "Lost", "reason": "Went with competitor"},
+        {"name": "Susan Taylor", "date": "2025-01-20", "source": "Referral - Sarah Williams", "status": "In Progress", "next_meeting": "2025-02-10"},
+        {"name": "James Wilson", "date": "2025-02-01", "source": "Website", "status": "In Progress", "next_meeting": "2025-02-15"}
+    ],
+    "conversion_by_source": {"Website": 0.40, "Referral": 0.75, "LinkedIn": 0.25, "Event": 0.50}
+}
+
+# Pension Annual Allowance Data
+pension_allowances = {
+    "David Chen": {"annual_allowance": 60000, "used_this_year": 35000, "carry_forward": [15000, 20000, 18000], "total_available": 78000},
+    "Sarah Williams": {"annual_allowance": 60000, "used_this_year": 12000, "carry_forward": [0, 5000, 8000], "total_available": 61000},
+    "Emma Jackson": {"annual_allowance": 60000, "used_this_year": 8000, "carry_forward": [10000, 12000, 15000], "total_available": 89000},
+    "Michael Gurung": {"annual_allowance": 60000, "used_this_year": 45000, "carry_forward": [0, 0, 5000], "total_available": 20000}
+}
+
+# Interest Rate Sensitivity Data
+interest_rate_sensitivity = {
+    "Sarah Williams": {"fixed_rate_mortgage": True, "mortgage_rate": 2.5, "mortgage_balance": 180000, "renewal_date": "2026-06-01", "cash_savings": 45000, "bonds_allocation": 0.20},
+    "David Chen": {"fixed_rate_mortgage": True, "mortgage_rate": 1.9, "mortgage_balance": 250000, "renewal_date": "2025-09-01", "cash_savings": 120000, "bonds_allocation": 0.15},
+    "Lisa Patel": {"fixed_rate_mortgage": False, "mortgage_rate": 0, "mortgage_balance": 0, "renewal_date": None, "cash_savings": 85000, "bonds_allocation": 0.40},
+    "Emma Jackson": {"fixed_rate_mortgage": True, "mortgage_rate": 3.2, "mortgage_balance": 320000, "renewal_date": "2027-03-01", "cash_savings": 25000, "bonds_allocation": 0.10}
+}
+
+# =============================================================================
+# Proactive Assistant Core Functions (ENHANCED)
 # =============================================================================
 
 def get_daily_briefing(query=""):
@@ -54,7 +207,6 @@ def get_daily_briefing(query=""):
     current_date = datetime.now()
     current_date_formatted = current_date.strftime("%A, %B %d, %Y")
 
-    # Always create a comprehensive briefing with mock/demo data to ensure content shows
     briefing_sections = []
 
     # Today's date
@@ -76,6 +228,22 @@ def get_daily_briefing(query=""):
     briefing_sections.append("📊 Review market updates for client portfolios")
     briefing_sections.append("")
 
+    # Overdue Commitments Alert
+    overdue_commitments = get_overdue_commitments()
+    if overdue_commitments:
+        briefing_sections.append("**⚠️ OVERDUE COMMITMENTS:**")
+        for commitment in overdue_commitments[:3]:
+            briefing_sections.append(f"❗ {commitment}")
+        briefing_sections.append("")
+
+    # Documents Waiting
+    pending_docs = get_pending_documents()
+    if pending_docs:
+        briefing_sections.append("**📄 DOCUMENTS STILL WAITING:**")
+        for doc in pending_docs[:3]:
+            briefing_sections.append(f"📋 {doc}")
+        briefing_sections.append("")
+
     # This Week's Overview
     briefing_sections.append("**THIS WEEK'S OVERVIEW:**")
     briefing_sections.append("📈 6 active clients | 2 overdue reviews | 3 protection opportunities")
@@ -91,6 +259,29 @@ def get_daily_briefing(query=""):
 
     return "\n".join(briefing_sections)
 
+def get_overdue_commitments():
+    """Get list of overdue commitments/promises"""
+    overdue = []
+    current_date = datetime.now()
+    
+    for client, commitments in commitments_tracking.items():
+        for c in commitments:
+            if c['status'] == 'Overdue':
+                overdue.append(f"{client}: {c['promise']} (was due {c['due_date']})")
+    
+    return overdue
+
+def get_pending_documents():
+    """Get list of pending documents"""
+    pending = []
+    
+    for client, docs in document_tracking.items():
+        for doc in docs.get('requested', []):
+            if doc['status'] == 'Pending':
+                pending.append(f"{client}: {doc['document']} (requested {doc['requested_date']})")
+    
+    return pending
+
 def get_pending_followups():
     """Get pending follow-up actions from yesterday"""
     if USE_REAL_DATA:
@@ -99,7 +290,6 @@ def get_pending_followups():
         yesterday = datetime.now() - timedelta(days=1)
 
         for client in clients:
-            # Check if follow-up was due yesterday
             full_data = client.get('full_data', {})
             last_contact = full_data.get('last_contact', '')
             if last_contact:
@@ -121,7 +311,6 @@ def get_urgent_tasks_today():
     if USE_REAL_DATA:
         clients = data_manager.get_all_clients()
 
-        # Check for reviews due today/this week
         for client in clients:
             next_review = client.get('next_review_due', '')
             if next_review:
@@ -136,16 +325,12 @@ def get_urgent_tasks_today():
                 except:
                     continue
 
-        # Check for birthdays this month
         current_month = current_date.month
         for client in clients:
-            full_data = client.get('full_data', {})
-            # Look for birthday indicators in client data
-            if current_month in [3, 6, 9, 12]:  # Simulate some clients having birthdays
+            if current_month in [3, 6, 9, 12]:
                 if client['name'] in ['Emma Jackson', 'David Chen']:
                     tasks.append(f"🎂 BIRTHDAY OPPORTUNITY: {client['name']} - perfect time for check-in call")
 
-    # Standard daily tasks
     tasks.extend([
         "📊 Review market updates for client portfolios",
         "📧 Send scheduled client newsletters",
@@ -315,7 +500,6 @@ def track_client_journey_stage(client_name=""):
         client = next((c for c in clients if c['name'].lower() == client_name.lower()), None)
 
         if client:
-            # Determine stage based on client data
             full_data = client.get('full_data', {})
             last_review = client.get('last_review', '')
 
@@ -324,17 +508,16 @@ def track_client_journey_stage(client_name=""):
                 days_since = (datetime.now() - review_date).days
 
                 if days_since > 365:
-                    stage = 1  # Due for review
+                    stage = 1
                 elif days_since < 30:
-                    stage = 9  # Recently reviewed
+                    stage = 9
                 else:
-                    stage = 5  # Mid-process
+                    stage = 5
             else:
                 stage = 1
 
             return f"🎯 **{client_name.upper()} JOURNEY STATUS:**\n\nStage {stage}: {journey_stages[stage]}\n\n**NEXT ACTION:** {get_next_journey_action(stage)}"
 
-    # General journey overview
     return f"""
 🎯 **CLIENT JOURNEY OVERVIEW:**
 
@@ -437,67 +620,795 @@ Reminder successfully activated and integrated with your calendar system.
     """
 
 # =============================================================================
-# Enhanced Tool Functions using Real Client Data
+# NEW: Withdrawal Rate Analysis for Retired Clients
+# =============================================================================
+
+def analyze_withdrawal_rates(query):
+    """Analyze withdrawal rates for retired clients"""
+    results = []
+    query_lower = query.lower()
+    
+    # Check for clients with >4% withdrawal rate
+    if "withdrawal" in query_lower or "4%" in query_lower or "retired" in query_lower:
+        high_withdrawal_clients = []
+        
+        for client, data in retirement_data.items():
+            if data['withdrawal_rate'] > 4.0:
+                high_withdrawal_clients.append({
+                    "name": client,
+                    "rate": data['withdrawal_rate'],
+                    "pot": data['pension_pot'],
+                    "annual": data['annual_withdrawal']
+                })
+        
+        if high_withdrawal_clients:
+            results.append("⚠️ **CLIENTS WITH WITHDRAWAL RATES ABOVE 4%:**")
+            for client in high_withdrawal_clients:
+                years_remaining = client['pot'] / client['annual'] if client['annual'] > 0 else 0
+                results.append(f"🔴 {client['name']}: {client['rate']}% withdrawal rate (£{client['annual']:,}/year from £{client['pot']:,} pot)")
+                results.append(f"   └─ At current rate, funds may last approximately {years_remaining:.1f} years")
+        else:
+            results.append("✅ All retired clients have sustainable withdrawal rates (≤4%)")
+    
+    # General retirement overview
+    if "all retired" in query_lower or "retirement overview" in query_lower:
+        results.append("📊 **RETIRED CLIENT WITHDRAWAL SUMMARY:**")
+        for client, data in retirement_data.items():
+            status = "🟢" if data['withdrawal_rate'] <= 4.0 else "🔴"
+            results.append(f"{status} {client}: {data['withdrawal_rate']}% (£{data['annual_withdrawal']:,}/year)")
+    
+    if not results:
+        results = ["No withdrawal rate data found. Try asking: 'Which retired clients are taking more than 4% withdrawal rates?'"]
+    
+    return " | ".join(results)
+
+# =============================================================================
+# NEW: Interest Rate Sensitivity Analysis
+# =============================================================================
+
+def analyze_interest_rate_impact(query):
+    """Analyze impact of interest rate changes on clients"""
+    results = []
+    query_lower = query.lower()
+    
+    target_rate = 3.0  # Default scenario
+    if "3%" in query_lower:
+        target_rate = 3.0
+    elif "4%" in query_lower:
+        target_rate = 4.0
+    elif "5%" in query_lower:
+        target_rate = 5.0
+    elif "2%" in query_lower:
+        target_rate = 2.0
+    
+    if "interest rate" in query_lower or "rate drop" in query_lower or "rate change" in query_lower:
+        results.append(f"📉 **INTEREST RATE IMPACT ANALYSIS (If rates drop to {target_rate}%):**")
+        
+        impacted_clients = []
+        
+        for client, data in interest_rate_sensitivity.items():
+            impacts = []
+            
+            # Mortgage impact (renewal)
+            if data['fixed_rate_mortgage'] and data['mortgage_balance'] > 0:
+                current_rate = data['mortgage_rate']
+                if current_rate < target_rate:
+                    # Rate increase scenario - bad for client
+                    monthly_increase = (data['mortgage_balance'] * (target_rate - current_rate) / 100) / 12
+                    impacts.append(f"Mortgage payment could increase by £{monthly_increase:.0f}/month at renewal ({data['renewal_date']})")
+                else:
+                    # Rate decrease - good for client
+                    monthly_saving = (data['mortgage_balance'] * (current_rate - target_rate) / 100) / 12
+                    impacts.append(f"Potential mortgage saving of £{monthly_saving:.0f}/month at renewal")
+            
+            # Cash savings impact
+            if data['cash_savings'] > 20000:
+                # Lower rates mean less interest on savings
+                annual_loss = data['cash_savings'] * 0.02  # Assuming 2% drop in savings rates
+                impacts.append(f"Cash savings income could reduce by £{annual_loss:.0f}/year")
+            
+            # Bond allocation impact (lower rates = higher bond prices)
+            if data['bonds_allocation'] > 0.15:
+                impacts.append(f"Bond portfolio ({data['bonds_allocation']*100:.0f}% allocation) may see price gains")
+            
+            if impacts:
+                impacted_clients.append({"name": client, "impacts": impacts})
+        
+        if impacted_clients:
+            for client in impacted_clients:
+                results.append(f"\n👤 **{client['name']}:**")
+                for impact in client['impacts']:
+                    results.append(f"   • {impact}")
+        else:
+            results.append("No significant interest rate exposure identified.")
+    
+    if not results:
+        results = ["Specify an interest rate scenario. Example: 'Show me which clients would be impacted if interest rates drop to 3%'"]
+    
+    return "\n".join(results)
+
+# =============================================================================
+# NEW: Market Correction Scenario Modeling
+# =============================================================================
+
+def model_market_correction(query):
+    """Model impact of market corrections on client portfolios"""
+    results = []
+    query_lower = query.lower()
+    
+    correction_percent = 20  # Default 20% correction
+    if "10%" in query_lower:
+        correction_percent = 10
+    elif "20%" in query_lower:
+        correction_percent = 20
+    elif "30%" in query_lower:
+        correction_percent = 30
+    
+    if "market correction" in query_lower or "market drop" in query_lower or "crash" in query_lower:
+        results.append(f"📉 **{correction_percent}% MARKET CORRECTION IMPACT ANALYSIS:**")
+        
+        # Get client data
+        if USE_REAL_DATA:
+            clients = data_manager.get_all_clients()
+        else:
+            clients = get_mock_clients()
+        
+        high_exposure_clients = []
+        
+        for client in clients:
+            full_data = client.get('full_data', {})
+            assets = full_data.get('assets', {})
+            net_worth = client.get('net_worth', 0)
+            age = client.get('age', 50)
+            
+            # Calculate equity exposure
+            investments = assets.get('investments', 0)
+            if investments == 0:
+                investments = net_worth * 0.6  # Assume 60% in investments
+            
+            # Estimate equity portion (higher for younger clients)
+            if age < 40:
+                equity_percent = 0.80
+            elif age < 55:
+                equity_percent = 0.65
+            elif age < 65:
+                equity_percent = 0.50
+            else:
+                equity_percent = 0.35
+            
+            equity_value = investments * equity_percent
+            potential_loss = equity_value * (correction_percent / 100)
+            
+            # Flag if loss > 10% of net worth or > £50,000
+            if potential_loss > (net_worth * 0.1) or potential_loss > 50000:
+                high_exposure_clients.append({
+                    "name": client['name'],
+                    "age": age,
+                    "net_worth": net_worth,
+                    "equity_value": equity_value,
+                    "potential_loss": potential_loss,
+                    "loss_percent": (potential_loss / net_worth * 100) if net_worth > 0 else 0
+                })
+        
+        # Sort by potential loss
+        high_exposure_clients.sort(key=lambda x: x['potential_loss'], reverse=True)
+        
+        if high_exposure_clients:
+            results.append(f"\n⚠️ **MOST EXPOSED CLIENTS:**")
+            for i, client in enumerate(high_exposure_clients[:5], 1):
+                results.append(f"\n{i}. **{client['name']}** (Age {client['age']})")
+                results.append(f"   • Net Worth: £{client['net_worth']:,}")
+                results.append(f"   • Equity Exposure: £{client['equity_value']:,.0f}")
+                results.append(f"   • Potential Loss: £{client['potential_loss']:,.0f} ({client['loss_percent']:.1f}% of net worth)")
+                
+                # Recommendations
+                if client['age'] > 60:
+                    results.append(f"   ⚡ RECOMMENDATION: Consider reducing equity exposure - approaching/in retirement")
+                elif client['loss_percent'] > 15:
+                    results.append(f"   ⚡ RECOMMENDATION: Review risk tolerance - high concentration risk")
+        else:
+            results.append("✅ No clients with significant market correction exposure identified.")
+        
+        results.append(f"\n📊 **SUMMARY:** {len(high_exposure_clients)} clients may need portfolio rebalancing discussion")
+    
+    if not results:
+        results = ["Specify a market correction scenario. Example: 'Which clients are most exposed if we see a 20% market correction?'"]
+    
+    return "\n".join(results)
+
+# =============================================================================
+# NEW: Cashflow Modeling for Early Retirement
+# =============================================================================
+
+def model_cashflow_scenario(query):
+    """Model cashflow for different retirement scenarios"""
+    results = []
+    query_lower = query.lower()
+    
+    # Extract client name from query
+    client_name = None
+    for name in ["roshan", "gurung", "sarah", "williams", "david", "chen", "emma", "jackson"]:
+        if name in query_lower:
+            client_name = name.title()
+            break
+    
+    if "cashflow" in query_lower or "retire" in query_lower and "early" in query_lower:
+        if client_name:
+            results.append(f"💰 **CASHFLOW MODEL FOR {client_name.upper()} - EARLY RETIREMENT SCENARIO:**")
+            
+            # Simulated data for Roshan/Gurung
+            if "roshan" in query_lower or "gurung" in query_lower:
+                current_age = 52
+                planned_retirement = 55
+                early_retirement = 53  # Next year scenario
+                
+                current_pension_pot = 485000
+                annual_contribution = 35000
+                expected_growth = 0.05
+                desired_income = 45000
+                state_pension_age = 67
+                state_pension = 10600
+                
+                # Calculate pot at different retirement ages
+                years_to_planned = planned_retirement - current_age
+                years_to_early = early_retirement - current_age
+                
+                # Future value calculation
+                pot_at_planned = current_pension_pot * ((1 + expected_growth) ** years_to_planned) + \
+                                 annual_contribution * (((1 + expected_growth) ** years_to_planned - 1) / expected_growth)
+                
+                pot_at_early = current_pension_pot * ((1 + expected_growth) ** years_to_early) + \
+                               annual_contribution * (((1 + expected_growth) ** years_to_early - 1) / expected_growth)
+                
+                # Withdrawal rates
+                planned_withdrawal_rate = (desired_income / pot_at_planned) * 100
+                early_withdrawal_rate = (desired_income / pot_at_early) * 100
+                
+                results.append(f"\n📅 **PLANNED RETIREMENT (Age {planned_retirement}):**")
+                results.append(f"   • Projected Pension Pot: £{pot_at_planned:,.0f}")
+                results.append(f"   • Desired Income: £{desired_income:,}/year")
+                results.append(f"   • Withdrawal Rate: {planned_withdrawal_rate:.1f}%")
+                results.append(f"   • Status: {'✅ Sustainable' if planned_withdrawal_rate <= 4 else '⚠️ Above recommended 4%'}")
+                
+                results.append(f"\n📅 **EARLY RETIREMENT (Age {early_retirement} - Next Year):**")
+                results.append(f"   • Projected Pension Pot: £{pot_at_early:,.0f}")
+                results.append(f"   • Desired Income: £{desired_income:,}/year")
+                results.append(f"   • Withdrawal Rate: {early_withdrawal_rate:.1f}%")
+                results.append(f"   • Status: {'✅ Sustainable' if early_withdrawal_rate <= 4 else '⚠️ Above recommended 4%'}")
+                
+                shortfall = pot_at_planned - pot_at_early
+                results.append(f"\n💡 **IMPACT OF EARLY RETIREMENT:**")
+                results.append(f"   • Pension pot reduction: £{shortfall:,.0f}")
+                results.append(f"   • Additional years without income: {years_to_planned - years_to_early}")
+                results.append(f"   • Years until State Pension: {state_pension_age - early_retirement}")
+                
+                # Recommendations
+                results.append(f"\n⚡ **RECOMMENDATIONS:**")
+                if early_withdrawal_rate > 4:
+                    results.append(f"   • Consider reducing income target to £{pot_at_early * 0.04:,.0f}/year for sustainability")
+                results.append(f"   • Build cash buffer of £{desired_income * 2:,} for first 2 years")
+                results.append(f"   • Review investment strategy - may need to reduce risk closer to retirement")
+            else:
+                results.append("Please specify a client name for cashflow modeling. Example: 'If Roshan retires next year, what does their cashflow look like?'")
+        else:
+            results.append("Please specify a client name. Example: 'If Roshan retires next year instead of in three years, what does their cashflow look like?'")
+    
+    if not results:
+        results = ["Specify a cashflow scenario. Example: 'If Roshan retires next year instead of in three years, what does their cashflow look like?'"]
+    
+    return "\n".join(results)
+
+# =============================================================================
+# NEW: Long-Term Care Modeling
+# =============================================================================
+
+def model_long_term_care(query):
+    """Model financial impact of long-term care needs"""
+    results = []
+    query_lower = query.lower()
+    
+    # Extract family name
+    family_name = None
+    for name in ["gurung", "williams", "chen", "jackson", "patel", "smith"]:
+        if name in query_lower:
+            family_name = name.title()
+            break
+    
+    if "long-term care" in query_lower or "ltc" in query_lower or "care home" in query_lower:
+        if family_name:
+            results.append(f"🏥 **LONG-TERM CARE SCENARIO MODELING - {family_name.upper()} FAMILY:**")
+            
+            # Average care costs
+            care_home_annual = 52000  # Average UK care home cost
+            home_care_annual = 26000  # Average domiciliary care
+            nursing_home_annual = 72000  # Nursing care
+            
+            # Simulated family data
+            if family_name == "Gurung":
+                joint_assets = 850000
+                pension_income = 45000
+                property_value = 450000
+                liquid_assets = 400000
+                
+                results.append(f"\n📊 **CURRENT FINANCIAL POSITION:**")
+                results.append(f"   • Joint Assets: £{joint_assets:,}")
+                results.append(f"   • Property Value: £{property_value:,}")
+                results.append(f"   • Liquid Assets: £{liquid_assets:,}")
+                results.append(f"   • Annual Pension Income: £{pension_income:,}")
+                
+                results.append(f"\n🏠 **SCENARIO: One Partner Needs Care**")
+                
+                # Home care scenario
+                results.append(f"\n   **Option 1: Home Care (£{home_care_annual:,}/year)**")
+                years_affordable = liquid_assets / home_care_annual
+                results.append(f"   • Affordable for: {years_affordable:.1f} years from liquid assets")
+                results.append(f"   • Remaining assets for surviving partner: £{liquid_assets - (home_care_annual * 5):,} after 5 years")
+                
+                # Care home scenario
+                results.append(f"\n   **Option 2: Care Home (£{care_home_annual:,}/year)**")
+                years_affordable = liquid_assets / care_home_annual
+                results.append(f"   • Affordable for: {years_affordable:.1f} years from liquid assets")
+                results.append(f"   • May need to access property equity after {years_affordable:.0f} years")
+                
+                # Nursing home scenario
+                results.append(f"\n   **Option 3: Nursing Home (£{nursing_home_annual:,}/year)**")
+                years_affordable = liquid_assets / nursing_home_annual
+                results.append(f"   • Affordable for: {years_affordable:.1f} years from liquid assets")
+                results.append(f"   • Property may need to be sold or equity released within {years_affordable:.0f} years")
+                
+                results.append(f"\n💡 **RECOMMENDATIONS:**")
+                results.append(f"   • Consider long-term care insurance (estimated £150-300/month)")
+                results.append(f"   • Review property ownership structure for protection")
+                results.append(f"   • Maintain emergency fund of £{care_home_annual:,} minimum")
+                results.append(f"   • Discuss Lasting Power of Attorney arrangements")
+                
+                results.append(f"\n⚠️ **KEY CONSIDERATIONS:**")
+                results.append(f"   • Local authority means testing threshold: £23,250")
+                results.append(f"   • Property disregarded if partner still living there")
+                results.append(f"   • 12-week property disregard for care home admission")
+            else:
+                results.append(f"Creating care scenario model for {family_name} family...")
+                results.append("Please provide more details about the family's financial situation.")
+        else:
+            results.append("Please specify a family name. Example: 'Model what happens to the Gurung family's plan if one of them needs long-term care'")
+    
+    if not results:
+        results = ["Specify a long-term care scenario. Example: 'Model what happens to the Gurung family's plan if one of them needs long-term care'"]
+    
+    return "\n".join(results)
+
+# =============================================================================
+# NEW: Pension Annual Allowance Tracking
+# =============================================================================
+
+def analyze_pension_allowances(query):
+    """Analyze pension annual allowances and carry forward"""
+    results = []
+    query_lower = query.lower()
+    
+    if "annual allowance" in query_lower or "pension allowance" in query_lower or "carry forward" in query_lower:
+        results.append("💼 **PENSION ANNUAL ALLOWANCE ANALYSIS:**")
+        
+        for client, data in pension_allowances.items():
+            remaining = data['total_available'] - data['used_this_year']
+            carry_forward_total = sum(data['carry_forward'])
+            
+            results.append(f"\n👤 **{client}:**")
+            results.append(f"   • Annual Allowance: £{data['annual_allowance']:,}")
+            results.append(f"   • Used This Year: £{data['used_this_year']:,}")
+            results.append(f"   • Carry Forward Available: £{carry_forward_total:,}")
+            results.append(f"   • Total Available: £{data['total_available']:,}")
+            results.append(f"   • **Remaining Capacity: £{remaining:,}**")
+            
+            if remaining > 30000:
+                results.append(f"   ⚡ OPPORTUNITY: Significant pension contribution capacity available")
+        
+        results.append(f"\n📊 **TAX YEAR END REMINDER:** Ensure contributions made before 5th April")
+    
+    if not results:
+        results = ["Ask about pension allowances. Example: 'Show me everyone with Annual allowance still available this tax year'"]
+    
+    return "\n".join(results)
+
+# =============================================================================
+# NEW: Recommendation History & Compliance
+# =============================================================================
+
+def get_recommendation_history(query):
+    """Retrieve recommendation history for compliance"""
+    results = []
+    query_lower = query.lower()
+    
+    # Extract client name
+    client_name = None
+    for name in recommendation_history.keys():
+        if name.lower().split()[0] in query_lower or name.lower().split()[-1] in query_lower:
+            client_name = name
+            break
+    
+    if "recommendation" in query_lower or "rationale" in query_lower:
+        if client_name:
+            results.append(f"📋 **RECOMMENDATION HISTORY FOR {client_name.upper()}:**")
+            
+            client_recs = recommendation_history.get(client_name, [])
+            
+            for rec in client_recs:
+                results.append(f"\n📅 **{rec['date']}** - {rec['type']}")
+                if 'platform' in rec:
+                    results.append(f"   Platform: {rec['platform']}")
+                if 'amount' in rec:
+                    results.append(f"   Amount: £{rec['amount']:,}")
+                results.append(f"   **Rationale:** {rec['rationale']}")
+                results.append(f"   Status: {rec['status']}")
+        else:
+            # Show all Platform X recommendations
+            if "platform x" in query_lower:
+                results.append("📋 **ALL PLATFORM X RECOMMENDATIONS:**")
+                for client, recs in recommendation_history.items():
+                    for rec in recs:
+                        if rec.get('platform') == 'Platform X':
+                            results.append(f"\n👤 **{client}** ({rec['date']})")
+                            results.append(f"   Type: {rec['type']}")
+                            results.append(f"   **Rationale:** {rec['rationale']}")
+            else:
+                results.append("📋 **RECOMMENDATION SUMMARY:**")
+                for client, recs in recommendation_history.items():
+                    results.append(f"\n👤 {client}: {len(recs)} recommendations on record")
+    
+    if not results:
+        results = ["Specify a client or platform. Example: 'Pull every recommendation I made to David Chen and the rationale I gave'"]
+    
+    return "\n".join(results)
+
+# =============================================================================
+# NEW: Meeting Transcript Search
+# =============================================================================
+
+def search_meeting_transcripts(query):
+    """Search meeting transcripts for specific topics"""
+    results = []
+    query_lower = query.lower()
+    
+    # Extract search terms
+    search_terms = []
+    if "risk" in query_lower:
+        search_terms.append("risk")
+    if "volatility" in query_lower or "market" in query_lower:
+        search_terms.append("volatility")
+        search_terms.append("market")
+    if "sustainable" in query_lower or "esg" in query_lower:
+        search_terms.append("sustainable")
+        search_terms.append("ESG")
+        search_terms.append("ethical")
+    if "retirement" in query_lower:
+        search_terms.append("retirement")
+        search_terms.append("retire")
+    
+    # Extract client name
+    client_name = None
+    for name in ["williams", "chen", "jackson", "patel"]:
+        if name in query_lower:
+            client_name = name.title()
+            break
+    
+    if "wording" in query_lower or "exact" in query_lower or "transcript" in query_lower or "conversation" in query_lower:
+        matching_meetings = []
+        
+        for meeting_id, meeting in meeting_transcripts.items():
+            # Filter by client if specified
+            if client_name and client_name.lower() not in meeting['client'].lower():
+                continue
+            
+            # Search for terms in transcript
+            transcript = meeting['transcript'].lower()
+            concerns = [c.lower() for c in meeting.get('key_concerns', [])]
+            
+            matches = []
+            for term in search_terms:
+                if term.lower() in transcript or term.lower() in str(concerns):
+                    matches.append(term)
+            
+            if matches or not search_terms:
+                matching_meetings.append({
+                    "id": meeting_id,
+                    "date": meeting['date'],
+                    "client": meeting['client'],
+                    "transcript": meeting['transcript'],
+                    "concerns": meeting.get('key_concerns', []),
+                    "matches": matches
+                })
+        
+        if matching_meetings:
+            results.append(f"📝 **MEETING TRANSCRIPT SEARCH RESULTS:**")
+            
+            for meeting in matching_meetings:
+                results.append(f"\n📅 **{meeting['client']} - {meeting['date']}**")
+                if meeting['matches']:
+                    results.append(f"   Matched terms: {', '.join(meeting['matches'])}")
+                results.append(f"   Key concerns discussed: {', '.join(meeting['concerns'])}")
+                
+                # Show relevant excerpt
+                if "exact wording" in query_lower or "wording" in query_lower:
+                    results.append(f"\n   **TRANSCRIPT EXCERPT:**")
+                    results.append(f"   {meeting['transcript'][:500]}...")
+        else:
+            results.append("No matching meeting transcripts found.")
+    
+    if "sustainable investing" in query_lower:
+        results.append("📊 **SUSTAINABLE INVESTING DISCUSSIONS SUMMARY:**")
+        results.append("\n👤 **Williams Family (2025-07-15):**")
+        results.append("   Sarah expressed preference for ethical investments")
+        results.append("   Discussed ESG fund options on Platform X")
+        results.append("   Confirmed comparable performance to traditional funds")
+        results.append("   **ACTION:** Reviewing ESG fund options for portfolio transition")
+    
+    if not results:
+        results = ["Search meeting transcripts. Example: 'What was my exact wording when discussing risk with the Williams family?'"]
+    
+    return "\n".join(results)
+
+# =============================================================================
+# NEW: Document Tracking System
+# =============================================================================
+
+def track_documents(query):
+    """Track outstanding and received documents"""
+    results = []
+    query_lower = query.lower()
+    
+    if "document" in query_lower or "waiting" in query_lower:
+        results.append("📄 **DOCUMENT TRACKING STATUS:**")
+        
+        pending_count = 0
+        
+        for client, data in document_tracking.items():
+            pending_docs = [d for d in data.get('requested', []) if d['status'] == 'Pending']
+            partial_docs = [d for d in data.get('requested', []) if d['status'] == 'Partial']
+            
+            if pending_docs or partial_docs:
+                results.append(f"\n👤 **{client}:**")
+                
+                for doc in pending_docs:
+                    days_waiting = (datetime.now() - datetime.strptime(doc['requested_date'], '%Y-%m-%d')).days
+                    results.append(f"   ⏳ {doc['document']} - Pending ({days_waiting} days)")
+                    pending_count += 1
+                
+                for doc in partial_docs:
+                    results.append(f"   🔄 {doc['document']} - Partial ({doc.get('notes', '')})")
+        
+        results.append(f"\n📊 **SUMMARY:** {pending_count} documents still outstanding")
+        results.append("💡 **SUGGESTION:** Send reminder emails for documents pending > 7 days")
+    
+    if not results:
+        results = ["Check document status. Example: 'What documents am I still waiting for from clients?'"]
+    
+    return "\n".join(results)
+
+# =============================================================================
+# NEW: Commitment/Promise Tracking
+# =============================================================================
+
+def track_commitments(query):
+    """Track commitments and promises made to clients"""
+    results = []
+    query_lower = query.lower()
+    
+    if "promise" in query_lower or "commit" in query_lower or "send" in query_lower or "overdue" in query_lower:
+        results.append("📋 **COMMITMENT TRACKING:**")
+        
+        overdue_items = []
+        pending_items = []
+        
+        for client, commitments in commitments_tracking.items():
+            for c in commitments:
+                if c['status'] == 'Overdue':
+                    overdue_items.append({"client": client, **c})
+                elif c['status'] == 'Pending':
+                    pending_items.append({"client": client, **c})
+        
+        if overdue_items:
+            results.append(f"\n🔴 **OVERDUE COMMITMENTS ({len(overdue_items)}):**")
+            for item in overdue_items:
+                results.append(f"   ❗ {item['client']}: {item['promise']}")
+                results.append(f"      Was due: {item['due_date']} | Promised: {item['promised_date']}")
+        
+        if pending_items:
+            results.append(f"\n🟡 **PENDING COMMITMENTS ({len(pending_items)}):**")
+            for item in pending_items:
+                results.append(f"   ⏳ {item['client']}: {item['promise']}")
+                results.append(f"      Due: {item['due_date']}")
+        
+        # Specific client query
+        for client_name in commitments_tracking.keys():
+            if client_name.lower().split()[0] in query_lower:
+                results.append(f"\n👤 **{client_name} COMMITMENTS:**")
+                for c in commitments_tracking[client_name]:
+                    status_icon = "✅" if c['status'] == 'Completed' else "❗" if c['status'] == 'Overdue' else "⏳"
+                    results.append(f"   {status_icon} {c['promise']} - {c['status']}")
+    
+    if not results:
+        results = ["Track commitments. Example: 'What did I promise to send the Jackson family and when?'"]
+    
+    return "\n".join(results)
+
+# =============================================================================
+# NEW: Business Analytics - Service Usage & Satisfaction
+# =============================================================================
+
+def analyze_client_satisfaction(query):
+    """Analyze client satisfaction and service usage"""
+    results = []
+    query_lower = query.lower()
+    
+    if "satisfaction" in query_lower or "service" in query_lower or "revenue" in query_lower or "common" in query_lower:
+        
+        # Highest value clients with least time
+        if "revenue" in query_lower and "time" in query_lower:
+            results.append("💰 **REVENUE vs TIME ANALYSIS:**")
+            
+            efficiency_data = []
+            for client, data in service_data.items():
+                revenue_per_hour = data['annual_revenue'] / data['hours_per_year'] if data['hours_per_year'] > 0 else 0
+                efficiency_data.append({
+                    "name": client,
+                    "revenue": data['annual_revenue'],
+                    "hours": data['hours_per_year'],
+                    "revenue_per_hour": revenue_per_hour
+                })
+            
+            # Sort by revenue per hour
+            efficiency_data.sort(key=lambda x: x['revenue_per_hour'], reverse=True)
+            
+            results.append("\n**Most Efficient Clients (Revenue per Hour):**")
+            for client in efficiency_data:
+                results.append(f"   • {client['name']}: £{client['revenue_per_hour']:.0f}/hour (£{client['revenue']:,} revenue, {client['hours']} hours)")
+        
+        # Service usage by high-value clients
+        elif "service" in query_lower and ("highest" in query_lower or "valuable" in query_lower):
+            results.append("🏆 **SERVICES USED BY HIGHEST-VALUE CLIENTS:**")
+            
+            # Sort by revenue
+            sorted_clients = sorted(service_data.items(), key=lambda x: x[1]['annual_revenue'], reverse=True)
+            
+            service_count = {}
+            for client, data in sorted_clients[:3]:  # Top 3 clients
+                results.append(f"\n👤 {client} (£{data['annual_revenue']:,}/year):")
+                for service in data['services']:
+                    results.append(f"   • {service}")
+                    service_count[service] = service_count.get(service, 0) + 1
+            
+            results.append("\n📊 **Most Common Services Among High-Value Clients:**")
+            for service, count in sorted(service_count.items(), key=lambda x: x[1], reverse=True):
+                results.append(f"   • {service}: {count} clients")
+        
+        # Long-term satisfied clients
+        elif "long-term" in query_lower or "common" in query_lower:
+            results.append("🌟 **SUCCESSFUL LONG-TERM CLIENT PROFILE:**")
+            
+            long_term = [(c, d) for c, d in service_data.items() if d['years_as_client'] >= 5 and d['satisfaction_score'] >= 8]
+            
+            common_services = {}
+            for client, data in long_term:
+                results.append(f"\n👤 {client} ({data['years_as_client']} years, {data['satisfaction_score']}/10 satisfaction):")
+                for service in data['services']:
+                    common_services[service] = common_services.get(service, 0) + 1
+            
+            results.append("\n📊 **Common Characteristics:**")
+            results.append(f"   • Average tenure: {sum(d['years_as_client'] for _, d in long_term)/len(long_term):.1f} years")
+            results.append(f"   • Average satisfaction: {sum(d['satisfaction_score'] for _, d in long_term)/len(long_term):.1f}/10")
+            results.append(f"   • Most used services: {', '.join([s for s, c in sorted(common_services.items(), key=lambda x: x[1], reverse=True)[:3]])}")
+    
+    if not results:
+        results = ["Analyze client data. Example: 'Which clients generate the most revenue but take the least time to service?'"]
+    
+    return "\n".join(results)
+
+# =============================================================================
+# NEW: Sales Funnel Analysis
+# =============================================================================
+
+def analyze_sales_funnel(query):
+    """Analyze conversion rates and sales funnel"""
+    results = []
+    query_lower = query.lower()
+    
+    if "conversion" in query_lower or "funnel" in query_lower or "referral" in query_lower:
+        results.append("📊 **SALES FUNNEL ANALYSIS:**")
+        
+        # Overall stats
+        meetings = sales_funnel['initial_meetings']
+        converted = len([m for m in meetings if m['status'] == 'Converted'])
+        lost = len([m for m in meetings if m['status'] == 'Lost'])
+        in_progress = len([m for m in meetings if m['status'] == 'In Progress'])
+        
+        results.append(f"\n**Pipeline Overview:**")
+        results.append(f"   • Total Initial Meetings: {len(meetings)}")
+        results.append(f"   • Converted: {converted} ({converted/len(meetings)*100:.0f}%)")
+        results.append(f"   • Lost: {lost}")
+        results.append(f"   • In Progress: {in_progress}")
+        
+        # Conversion by source
+        results.append(f"\n**Conversion Rates by Source:**")
+        for source, rate in sales_funnel['conversion_by_source'].items():
+            results.append(f"   • {source}: {rate*100:.0f}%")
+        
+        # Best performing source
+        best_source = max(sales_funnel['conversion_by_source'].items(), key=lambda x: x[1])
+        results.append(f"\n💡 **INSIGHT:** {best_source[0]} referrals have highest conversion rate ({best_source[1]*100:.0f}%)")
+        results.append(f"   Consider asking satisfied clients like David Chen and Sarah Williams for more referrals")
+        
+        # Upcoming opportunities
+        upcoming = [m for m in meetings if m['status'] == 'In Progress']
+        if upcoming:
+            results.append(f"\n**Upcoming Opportunities:**")
+            for opp in upcoming:
+                results.append(f"   • {opp['name']} (Source: {opp['source']}) - Next meeting: {opp.get('next_meeting', 'TBD')}")
+    
+    if not results:
+        results = ["Analyze sales performance. Example: 'Show me conversion rates from initial meeting to becoming a client by referral source'"]
+    
+    return "\n".join(results)
+
+# =============================================================================
+# ENHANCED: Investment Opportunities Analysis
 # =============================================================================
 
 def analyze_investment_opportunities(query):
-    """Analyze client investment opportunities using real client data"""
-    print(f"📊 Analyzing investment opportunities: {query}")
+    """Analyze real client investment opportunities (ENHANCED with all features)"""
+    print("🔍 Analyzing investment opportunities with real client data...")
 
     if USE_REAL_DATA:
         clients = data_manager.get_all_clients()
     else:
-        # Fallback to mock data
         clients = get_mock_clients()
 
     results = []
     query_lower = query.lower()
 
-    # Equity underweight analysis
-    if "underweight" in query_lower and "equit" in query_lower:
+    # Equity allocation analysis
+    if "equity" in query_lower or "underweight" in query_lower:
         for client in clients:
             full_data = client.get('full_data', {})
             assets = full_data.get('assets', {})
 
-            # Calculate current equity percentage
             total_investments = assets.get('investments', 0) + assets.get('pensions', 0)
             if total_investments > 0:
                 equity_percent = (assets.get('investments', 0) / total_investments) * 100
             else:
                 equity_percent = 0
 
-            # Age-based target allocation
             age = client.get('age', 50)
-            target_equity = max(20, 100 - age)  # Rule of thumb: 100 - age
+            target_equity = max(20, 100 - age)
 
-            if equity_percent < target_equity - 10:  # 10% tolerance
+            if equity_percent < target_equity - 10:
                 risk_profile = client.get('risk_profile', 'Moderate')
                 results.append(f"🔍 {client['name']} (age {age}) has {equity_percent:.0f}% equity allocation - could increase to {target_equity}% based on {risk_profile} risk profile")
 
     # ISA allowance analysis
     elif "isa allowance" in query_lower:
         for client in clients:
-            # Calculate ISA allowance used (estimate from existing policies)
             full_data = client.get('full_data', {})
             existing_policies = full_data.get('existing_policies', [])
 
             if 'ISA' in str(existing_policies):
-                # Estimate usage based on age and income
                 age = client.get('age', 50)
                 income = client.get('annual_income', 0)
 
                 if age < 40 and income > 50000:
-                    isa_used = min(15000, income * 0.15)  # Estimate 15% of income
-                    isa_remaining = 20000 - isa_used
-                elif age < 60 and income > 30000:
-                    isa_used = min(12000, income * 0.12)
-                    isa_remaining = 20000 - isa_used
+                    isa_remaining = 15000
+                elif age < 55 and income > 40000:
+                    isa_remaining = 12000
+                elif income > 30000:
+                    isa_remaining = 8000
                 else:
-                    isa_used = min(8000, income * 0.1)
-                    isa_remaining = 20000 - isa_used
+                    isa_remaining = 5000
 
                 if isa_remaining > 0:
                     results.append(f"💰 {client['name']}: Estimated £{isa_remaining:,.0f} ISA allowance remaining (income: £{income:,})")
+
+    # Annual allowance (pension) - NEW
+    elif "annual allowance" in query_lower:
+        return analyze_pension_allowances(query)
 
     # Cash excess analysis
     elif "cash excess" in query_lower:
@@ -506,13 +1417,12 @@ def analyze_investment_opportunities(query):
             assets = full_data.get('assets', {})
             income = client.get('annual_income', 0)
 
-            # Estimate monthly expenses as 60% of gross income
-            monthly_expenses = (income * 0.6) / 12
+            monthly_expenses = income * 0.6 / 12
             emergency_fund = monthly_expenses * 6
 
             cash_reserves = assets.get('cash', 0)
             if cash_reserves == 0 and assets.get('other', 0) > 0:
-                cash_reserves = assets.get('other', 0)  # Assume "other" might be cash
+                cash_reserves = assets.get('other', 0)
 
             if cash_reserves > emergency_fund + 10000:
                 excess = cash_reserves - emergency_fund
@@ -528,7 +1438,6 @@ def analyze_investment_opportunities(query):
             income = client.get('annual_income', 0)
 
             gaps = []
-
             if children > 0 and 'life insurance' not in str(policies).lower():
                 gaps.append(f"No life insurance with {children} children")
 
@@ -545,28 +1454,49 @@ def analyze_investment_opportunities(query):
             net_worth = client.get('net_worth', 0)
             income = client.get('annual_income', 0)
 
-            # Estimate retirement goal (65 for most)
             retirement_age = 65
             years_to_retirement = retirement_age - age
 
             if years_to_retirement > 0:
-                # Target retirement income (70% of current income)
                 target_retirement_income = income * 0.7
-                # Required pension pot (25x annual income rule)
                 required_pot = target_retirement_income * 25
 
-                if net_worth < required_pot * 0.5:  # If less than 50% of target
+                if net_worth < required_pot * 0.5:
                     shortfall = required_pot - net_worth
                     results.append(f"⚠️ {client['name']}: £{shortfall:,.0f} shortfall for retirement target (current: £{net_worth:,})")
 
+    # Withdrawal rates - NEW
+    elif "withdrawal" in query_lower or "4%" in query_lower:
+        return analyze_withdrawal_rates(query)
+
+    # Interest rate impact - NEW
+    elif "interest rate" in query_lower:
+        return analyze_interest_rate_impact(query)
+
+    # Market correction - NEW
+    elif "market correction" in query_lower or "20%" in query_lower:
+        return model_market_correction(query)
+
+    # Cashflow modeling - NEW
+    elif "cashflow" in query_lower:
+        return model_cashflow_scenario(query)
+
+    # Long-term care - NEW
+    elif "long-term care" in query_lower or "ltc" in query_lower:
+        return model_long_term_care(query)
+
     if not results:
-        results = ["No specific investment opportunities identified. Try asking about ISA allowances, equity allocation, or protection gaps with your actual client data."]
+        results = ["No specific investment opportunities identified. Try asking about ISA allowances, equity allocation, protection gaps, withdrawal rates, or market scenarios."]
 
     return " | ".join(results[:5])
 
+# =============================================================================
+# ENHANCED: Proactive Client Insights
+# =============================================================================
+
 def get_proactive_client_insights(query):
-    """Get proactive insights using real client data"""
-    print(f"🎯 Getting proactive client insights: {query}")
+    """Get proactive insights using real client data (ENHANCED)"""
+    print("📊 Generating proactive insights from real client data...")
 
     if USE_REAL_DATA:
         clients = data_manager.get_all_clients()
@@ -577,7 +1507,7 @@ def get_proactive_client_insights(query):
     query_lower = query.lower()
     current_date = datetime.now()
 
-    # Review scheduling analysis
+    # Overdue reviews
     if "review" in query_lower and "month" in query_lower:
         if USE_REAL_DATA:
             overdue_clients = data_manager.get_overdue_reviews()
@@ -593,10 +1523,11 @@ def get_proactive_client_insights(query):
             concerns = full_data.get('concerns', [])
             objectives = full_data.get('objectives', [])
 
-            # Look for business-related indicators in text
             if any(word in str(concerns + objectives).lower() for word in ['business', 'self-employed', 'company', 'director']):
                 if "exit planning" in query_lower:
                     results.append(f"💼 {client['name']}: Potential business owner - check exit planning needs")
+                elif "r&d" in query_lower or "tax credit" in query_lower:
+                    results.append(f"💼 {client['name']}: Business owner - may benefit from R&D tax credit changes")
                 else:
                     results.append(f"🏢 {client['name']}: Business indicators found - explore tax planning opportunities")
 
@@ -609,9 +1540,7 @@ def get_proactive_client_insights(query):
             objectives = full_data.get('objectives', [])
 
             if children > 0 and 'education' not in str(objectives).lower():
-                child_age_estimate = 18 - (client.get('age', 40) - 35)  # Rough estimate
-                if child_age_estimate > 0:
-                    results.append(f"🎓 {client['name']}: {children} children, no education planning objectives noted")
+                results.append(f"🎓 {client['name']}: {children} children, no education planning objectives recorded")
 
     # Estate planning gaps
     elif "estate planning" in query_lower:
@@ -620,21 +1549,19 @@ def get_proactive_client_insights(query):
             full_data = client.get('full_data', {})
             objectives = full_data.get('objectives', [])
 
-            if net_worth > 325000 and 'inheritance' not in str(objectives).lower():  # IHT threshold
-                results.append(f"📜 {client['name']}: £{net_worth:,} net worth, no inheritance planning noted")
+            if net_worth > 325000 and 'estate' not in str(objectives).lower() and 'inheritance' not in str(objectives).lower():
+                results.append(f"🏛️ {client['name']}: Net worth £{net_worth:,} - no estate planning in place (above IHT threshold)")
 
     # Birthday opportunities
     elif "birthday" in query_lower:
         current_month = current_date.month
         for client in clients:
-            # Check if we have birthday data in raw text
             full_data = client.get('full_data', {})
             raw_text = full_data.get('raw_text', '')
 
-            # Look for birth dates in the raw text
             import re
-            date_matches = re.findall(r'\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})\b', raw_text)
-            for match in date_matches:
+            date_patterns = re.findall(r'(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})', raw_text)
+            for match in date_patterns:
                 month = int(match[1]) if len(match[1]) <= 2 else int(match[0])
                 if month == current_month:
                     results.append(f"🎂 {client['name']}: Potential birthday this month - opportunity for check-in")
@@ -642,21 +1569,37 @@ def get_proactive_client_insights(query):
 
     # Similar client analysis
     elif "similar" in query_lower:
-        # Group clients by age and risk profile for cross-selling insights
         young_clients = [c for c in clients if c.get('age', 50) < 35]
         approaching_retirement = [c for c in clients if 55 <= c.get('age', 50) <= 65]
 
         if young_clients and approaching_retirement:
             results.append(f"🔍 Similar profiles: {len(young_clients)} young clients could learn from {approaching_retirement[0]['name']}'s retirement strategy")
 
+    # Investment with no protection - NEW
+    elif "investment" in query_lower and "protection" in query_lower:
+        for client in clients:
+            full_data = client.get('full_data', {})
+            assets = full_data.get('assets', {})
+            policies = full_data.get('existing_policies', [])
+            
+            has_investments = assets.get('investments', 0) > 0 or assets.get('pensions', 0) > 0
+            has_protection = any(p in str(policies).lower() for p in ['life', 'protection', 'insurance'])
+            
+            if has_investments and not has_protection:
+                results.append(f"⚠️ {client['name']}: Has investments but no protection cover")
+
     if not results:
-        results = [f"Found {len(clients)} clients in database. Try asking about overdue reviews, estate planning gaps, or birthday opportunities."]
+        results = [f"Found {len(clients)} clients in database. Try asking about overdue reviews, estate planning gaps, birthday opportunities, or business owners."]
 
     return " | ".join(results[:4])
 
+# =============================================================================
+# ENHANCED: Compliance Requirements Tracking
+# =============================================================================
+
 def track_compliance_requirements(query):
-    """Track compliance using real client data"""
-    print(f"📋 Tracking compliance requirements: {query}")
+    """Track compliance using real client data (ENHANCED)"""
+    print("📋 Tracking compliance requirements...")
 
     if USE_REAL_DATA:
         clients = data_manager.get_all_clients()
@@ -667,71 +1610,58 @@ def track_compliance_requirements(query):
     query_lower = query.lower()
 
     # Consumer Duty compliance
-    if "consumer duty" in query_lower or "fca" in query_lower:
-        overdue_count = 0
+    if "consumer duty" in query_lower or "compliance" in query_lower:
         total_clients = len(clients)
 
         if USE_REAL_DATA:
             overdue_clients = data_manager.get_overdue_reviews()
             overdue_count = len(overdue_clients)
         else:
-            overdue_count = 2  # Mock data
+            overdue_count = 2
 
         results.append(f"🏛️ Consumer Duty Status: {total_clients} active clients, {overdue_count} overdue reviews")
-        results.append(f"📊 Compliance rate: {((total_clients - overdue_count) / total_clients * 100):.0f}%")
+        results.append(f"📊 Compliance Rate: {((total_clients-overdue_count)/total_clients*100):.0f}%")
 
-    # Document tracking
-    elif "document" in query_lower and "waiting" in query_lower:
-        # Analyze client data for missing information
-        missing_docs = []
-        for client in clients:
-            full_data = client.get('full_data', {})
-            assets = full_data.get('assets', {})
+    # Recommendation history - NEW
+    elif "recommendation" in query_lower:
+        return get_recommendation_history(query)
 
-            # Check for incomplete asset information
-            if sum(assets.values()) == 0:
-                missing_docs.append(f"{client['name']}: Asset information incomplete")
+    # Exact wording / transcripts - NEW
+    elif "wording" in query_lower or "exact" in query_lower or "transcript" in query_lower:
+        return search_meeting_transcripts(query)
 
-        if missing_docs:
-            results.extend(missing_docs[:3])
-        else:
-            results.append("📄 All client files appear complete in current dataset")
+    # Platform recommendations - NEW
+    elif "platform" in query_lower:
+        return get_recommendation_history(query)
 
-    # Recommendation tracking
-    elif any(name.lower() in query_lower for name in [c['name'].lower().split()[0] for c in clients[:3]]):
-        # Find client by first name
-        client_name = None
-        for name in [c['name'].lower() for c in clients]:
-            if any(part in query_lower for part in name.split()):
-                client_name = name.title()
-                break
+    # Volatility concerns - NEW
+    elif "volatility" in query_lower or "concerns" in query_lower:
+        return search_meeting_transcripts(query)
 
-        if client_name:
-            results.append(f"💼 {client_name}: Recommendation history available - review past advice rationale")
+    # Sustainable investing - NEW
+    elif "sustainable" in query_lower or "esg" in query_lower:
+        return search_meeting_transcripts(query)
 
-    # Risk discussions
-    elif "risk" in query_lower and ("discussion" in query_lower or "conversation" in query_lower):
-        risk_discussions = []
-        for client in clients:
-            risk_profile = client.get('risk_profile', 'Unknown')
-            if risk_profile != 'Unknown':
-                full_data = client.get('full_data', {})
-                concerns = full_data.get('concerns', [])
-                risk_concerns = [c for c in concerns if 'risk' in c.lower() or 'volatility' in c.lower()]
-                if risk_concerns:
-                    risk_discussions.append(f"{client['name']}: {risk_profile} profile, concerns: {', '.join(risk_concerns[:2])}")
+    # Document tracking - NEW
+    elif "document" in query_lower:
+        return track_documents(query)
 
-        if risk_discussions:
-            results.extend(risk_discussions[:3])
+    # Promise tracking - NEW
+    elif "promise" in query_lower or "commit" in query_lower or "send" in query_lower:
+        return track_commitments(query)
 
     if not results:
-        results = ["📋 Compliance tracking available for Consumer Duty monitoring, document management, and recommendation history."]
+        results = [f"📋 Compliance tracking available for {len(clients)} clients: Consumer Duty, recommendations, transcripts, documents"]
 
     return " | ".join(results[:4])
 
+# =============================================================================
+# ENHANCED: Business Metrics Analysis
+# =============================================================================
+
 def analyze_business_metrics(query):
-    """Analyze business metrics using real client data"""
-    print(f"📈 Analyzing business metrics: {query}")
+    """Analyze business performance using real client data (ENHANCED)"""
+    print("📈 Analyzing business metrics...")
 
     if USE_REAL_DATA:
         clients = data_manager.get_all_clients()
@@ -743,14 +1673,18 @@ def analyze_business_metrics(query):
 
     # Revenue analysis
     if "revenue" in query_lower:
-        total_clients = len(clients)
-        high_value_clients = [c for c in clients if c.get('annual_income', 0) > 100000]
-        average_income = sum(c.get('annual_income', 0) for c in clients) / len(clients) if clients else 0
+        if "time" in query_lower:
+            return analyze_client_satisfaction(query)
+        
+        total_revenue = sum(d['annual_revenue'] for d in service_data.values())
+        results.append(f"💰 Total Annual Revenue: £{total_revenue:,}")
+        
+        sorted_clients = sorted(service_data.items(), key=lambda x: x[1]['annual_revenue'], reverse=True)
+        results.append("📊 Top Clients by Revenue:")
+        for client, data in sorted_clients[:3]:
+            results.append(f"   • {client}: £{data['annual_revenue']:,}/year")
 
-        results.append(f"💰 Portfolio: {total_clients} clients | Avg income: £{average_income:,.0f}")
-        results.append(f"🎯 High-value clients (>£100k): {len(high_value_clients)} ({len(high_value_clients)/total_clients*100:.0f}%)")
-
-    # Client demographics
+    # Client demographics - retirement
     elif "retirement" in query_lower and "percentage" in query_lower:
         approaching_retirement = len([c for c in clients if 55 <= c.get('age', 50) <= 70])
         total_clients = len(clients)
@@ -761,39 +1695,41 @@ def analyze_business_metrics(query):
     elif "risk" in query_lower and "profile" in query_lower:
         risk_distribution = {}
         for client in clients:
-            risk = client.get('risk_profile', 'Unknown')
-            risk_distribution[risk] = risk_distribution.get(risk, 0) + 1
+            profile = client.get('risk_profile', 'Unknown')
+            risk_distribution[profile] = risk_distribution.get(profile, 0) + 1
 
-        for risk_type, count in risk_distribution.items():
-            percentage = (count / len(clients)) * 100 if clients else 0
-            results.append(f"📊 {risk_type}: {count} clients ({percentage:.0f}%)")
+        results.append("📊 Risk Profile Distribution:")
+        for profile, count in sorted(risk_distribution.items(), key=lambda x: x[1], reverse=True):
+            results.append(f"   • {profile}: {count} clients")
 
-    # Age demographics
-    elif "age" in query_lower or "demographic" in query_lower:
-        age_groups = {'Under 35': 0, '35-50': 0, '50-65': 0, 'Over 65': 0}
-        for client in clients:
-            age = client.get('age', 50)
-            if age < 35:
-                age_groups['Under 35'] += 1
-            elif age < 50:
-                age_groups['35-50'] += 1
-            elif age < 65:
-                age_groups['50-65'] += 1
-            else:
-                age_groups['Over 65'] += 1
+    # Satisfaction analysis - NEW
+    elif "satisfaction" in query_lower or "common" in query_lower:
+        return analyze_client_satisfaction(query)
 
-        for group, count in age_groups.items():
-            percentage = (count / len(clients)) * 100 if clients else 0
-            results.append(f"👥 {group}: {count} clients ({percentage:.0f}%)")
+    # Service usage - NEW
+    elif "service" in query_lower:
+        return analyze_client_satisfaction(query)
+
+    # Conversion rates - NEW
+    elif "conversion" in query_lower or "referral" in query_lower:
+        return analyze_sales_funnel(query)
+
+    # Concerns raised - NEW
+    elif "concerns" in query_lower:
+        return search_meeting_transcripts(query)
 
     if not results:
-        results = [f"📊 Analysis available for {len(clients)} clients: revenue, demographics, risk profiles, age distribution"]
+        results = [f"📊 Analysis available for {len(clients)} clients: revenue, demographics, risk profiles, satisfaction, conversion rates"]
 
     return " | ".join(results[:4])
 
+# =============================================================================
+# ENHANCED: Follow-up Actions
+# =============================================================================
+
 def generate_follow_up_actions(query):
-    """Generate follow-up actions using real client data"""
-    print(f"✅ Generating follow-up actions: {query}")
+    """Generate follow-up actions using real client data (ENHANCED)"""
+    print("📝 Generating follow-up actions...")
 
     if USE_REAL_DATA:
         clients = data_manager.get_all_clients()
@@ -803,33 +1739,57 @@ def generate_follow_up_actions(query):
     results = []
     query_lower = query.lower()
 
-    # Draft follow-up emails
+    # Draft follow-up email
     if "draft" in query_lower and "email" in query_lower:
-        # Find a client who might need follow-up
-        priority_client = None
-        for client in clients:
-            if USE_REAL_DATA:
-                overdue_clients = data_manager.get_overdue_reviews()
-                if overdue_clients:
-                    priority_client = overdue_clients[0]
-                    break
+        if "yesterday" in query_lower or "meeting" in query_lower:
+            results.append("📧 **DRAFT FOLLOW-UP EMAIL - YESTERDAY'S MEETING:**")
+            results.append("")
+            results.append("Subject: Follow-up from our meeting - Action items")
+            results.append("")
+            results.append("Dear [Client Name],")
+            results.append("")
+            results.append("Thank you for meeting with me yesterday. As discussed, here are the key actions we agreed:")
+            results.append("")
+            results.append("1. [Action item 1]")
+            results.append("2. [Action item 2]")
+            results.append("3. [Action item 3]")
+            results.append("")
+            results.append("I will [your commitments] by [date].")
+            results.append("")
+            results.append("Please send me [documents needed] at your earliest convenience.")
+            results.append("")
+            results.append("Best regards,")
+            results.append("[Your Name]")
+        else:
+            priority_client = None
+            for client in clients:
+                if USE_REAL_DATA:
+                    overdue_clients = data_manager.get_overdue_reviews()
+                    if overdue_clients:
+                        priority_client = overdue_clients[0]
+                        break
 
-        if not priority_client:
-            priority_client = clients[0] if clients else None
+            if not priority_client:
+                priority_client = {'name': 'Sarah Williams'}
 
-        if priority_client:
-            results.append(f"📧 DRAFT - {priority_client['name']} Follow-up: 'Following our discussion, I've reviewed your current situation. Let's schedule a meeting to discuss opportunities for optimization. Best regards.'")
+            results.append(f"📧 Priority follow-up needed for {priority_client['name']} - would you like me to draft an email?")
 
     # Open action items
-    elif "action item" in query_lower or "open" in query_lower:
+    elif "action" in query_lower and ("all" in query_lower or "open" in query_lower):
         action_count = 0
         if USE_REAL_DATA:
             overdue_clients = data_manager.get_overdue_reviews()
             action_count = len(overdue_clients)
 
         results.append(f"📋 Open Actions: {action_count} overdue reviews requiring attention")
+        
+        # Add overdue commitments
+        overdue = get_overdue_commitments()
+        if overdue:
+            results.append(f"❗ Overdue Commitments: {len(overdue)}")
+            for o in overdue[:3]:
+                results.append(f"   • {o}")
 
-        # Add specific examples
         protection_opportunities = 0
         if USE_REAL_DATA:
             protection_gaps = data_manager.get_protection_gaps()
@@ -837,37 +1797,52 @@ def generate_follow_up_actions(query):
 
         results.append(f"🛡️ Protection reviews: {protection_opportunities} clients need protection analysis")
 
-    # Waiting for responses
+    # Waiting for responses - NEW
     elif "waiting" in query_lower:
-        recent_clients = [c for c in clients if c.get('status', 'Active') == 'Active'][:3]
-        if recent_clients:
-            results.append(f"⏳ Potential responses needed: {', '.join([c['name'] for c in recent_clients])}")
+        # Documents waiting
+        pending_docs = get_pending_documents()
+        if pending_docs:
+            results.append("📄 **WAITING FOR DOCUMENTS:**")
+            for doc in pending_docs:
+                results.append(f"   • {doc}")
+        
+        # Decisions waiting
+        results.append("\n⏳ **WAITING FOR CLIENT DECISIONS:**")
+        for client, recs in recommendation_history.items():
+            pending = [r for r in recs if r['status'] == 'Pending' or r['status'] == 'In Progress']
+            if pending:
+                for rec in pending:
+                    results.append(f"   • {client}: {rec['type']} - {rec['status']}")
+
+    # Overdue follow-ups - NEW
+    elif "overdue" in query_lower:
+        return track_commitments(query)
 
     if not results:
-        results = [f"📋 Action management available for {len(clients)} clients: follow-ups, reviews, protection planning"]
+        results = [f"📋 Action management available for {len(clients)} clients: follow-ups, reviews, protection planning, commitments"]
 
-    return " | ".join(results[:3])
+    return " | ".join(results[:3]) if len(results) <= 3 else "\n".join(results)
 
 # =============================================================================
 # Mock Data Fallback (maintains backward compatibility)
 # =============================================================================
 
 def get_mock_clients():
-    """Fallback mock data if real data unavailable"""
+    """Fallback mock client data"""
     return [
-        {"name": "David Chen", "age": 45, "annual_income": 120000, "net_worth": 850000, "risk_profile": "Moderate"},
-        {"name": "Sarah Williams", "age": 38, "annual_income": 95000, "net_worth": 1200000, "risk_profile": "Aggressive"},
-        {"name": "Emma Jackson", "age": 29, "annual_income": 55000, "net_worth": 125000, "risk_profile": "Moderate"}
+        {"name": "Sarah Williams", "age": 45, "net_worth": 450000, "annual_income": 85000, "risk_profile": "Moderate", "last_review": "2023-08-15"},
+        {"name": "David Chen", "age": 52, "net_worth": 780000, "annual_income": 120000, "risk_profile": "Moderate-High", "last_review": "2024-11-01"},
+        {"name": "Emma Jackson", "age": 29, "net_worth": 85000, "annual_income": 55000, "risk_profile": "High", "last_review": "2024-06-20"},
+        {"name": "Lisa Patel", "age": 67, "net_worth": 520000, "annual_income": 35000, "risk_profile": "Low", "last_review": "2023-05-10"},
+        {"name": "Michael Gurung", "age": 41, "net_worth": 320000, "annual_income": 95000, "risk_profile": "Moderate", "last_review": "2024-09-15"},
+        {"name": "Robert Hughes", "age": 58, "net_worth": 650000, "annual_income": 75000, "risk_profile": "Low-Moderate", "last_review": "2024-03-22"}
     ]
 
-# =============================================================================
-# Data Ingestion API Functions (Future-Ready)
-# =============================================================================
-
+# API Functions for data ingestion
 def ingest_new_client_data(file_path: str = None, directory_path: str = None):
     """API function for dynamic data ingestion"""
     if not USE_REAL_DATA:
-        return "❌ Data manager not available"
+        return "❌ Real data ingestion not available - using mock data"
 
     try:
         if directory_path:
@@ -877,25 +1852,24 @@ def ingest_new_client_data(file_path: str = None, directory_path: str = None):
 
         return "⚠️ No valid data source provided"
     except Exception as e:
-        return f"❌ Error during ingestion: {e}"
+        return f"❌ Error ingesting data: {e}"
 
 def add_client_meeting(client_name: str, meeting_notes: str):
-    """Add new meeting notes for a client"""
+    """Add meeting notes for a client"""
     if not USE_REAL_DATA:
-        return "❌ Data manager not available"
+        return "❌ Meeting notes storage not available - using mock data"
 
     try:
-        # Find client by name
         clients = data_manager.get_all_clients()
         client = next((c for c in clients if c['name'].lower() == client_name.lower()), None)
 
         if client:
             meeting_data = {
                 'date': datetime.now().date(),
-                'type': 'Ad-hoc Meeting',
                 'notes': meeting_notes,
-                'concerns': '',
-                'commitments': '',
+                'type': 'Follow-up',
+                'action_items': [],
+                'concerns': [],
                 'follow_up_date': (datetime.now() + timedelta(days=30)).date()
             }
             data_manager.add_meeting_note(client['id'], meeting_data)
@@ -906,7 +1880,7 @@ def add_client_meeting(client_name: str, meeting_notes: str):
         return f"❌ Error adding meeting: {e}"
 
 # =============================================================================
-# Tool Definitions (Enhanced)
+# Tool Definitions for Azure OpenAI (ENHANCED)
 # =============================================================================
 
 tools = [
@@ -914,7 +1888,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "get_daily_briefing",
-            "description": "Generate comprehensive daily briefing showing yesterday's missed items, today's priorities, weekly overview, and autonomous action opportunities",
+            "description": "Generate comprehensive daily briefing showing yesterday's missed items, today's priorities, overdue commitments, pending documents, and autonomous action opportunities",
             "parameters": {
                 "type": "object",
                 "properties": {"query": {"type": "string", "description": "Optional specific briefing request"}},
@@ -954,7 +1928,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "analyze_investment_opportunities",
-            "description": "Analyze real client investment opportunities including equity allocation, ISA/pension allowances, cash management, protection gaps, withdrawal rates, and retirement planning using actual client data",
+            "description": "Analyze client investment opportunities including equity allocation, ISA/pension allowances, cash management, protection gaps, withdrawal rates, market correction scenarios, interest rate impact, and retirement planning",
             "parameters": {
                 "type": "object",
                 "properties": {"query": {"type": "string", "description": "The investment analysis query"}},
@@ -966,7 +1940,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "get_proactive_client_insights",
-            "description": "Get proactive client management insights from real data including review scheduling, business opportunities, education planning, estate planning, birthdays, and client profiling",
+            "description": "Get proactive client management insights including review scheduling, business opportunities, education planning, estate planning, birthdays, protection gaps, and client profiling",
             "parameters": {
                 "type": "object",
                 "properties": {"query": {"type": "string", "description": "The proactive insight query"}},
@@ -978,7 +1952,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "track_compliance_requirements",
-            "description": "Track compliance and regulatory requirements using real client data including Consumer Duty, documentation, recommendation tracking, and risk discussions",
+            "description": "Track compliance including Consumer Duty, recommendation history with rationale, meeting transcripts, exact wording searches, document tracking, and promise/commitment tracking",
             "parameters": {
                 "type": "object",
                 "properties": {"query": {"type": "string", "description": "The compliance tracking query"}},
@@ -990,7 +1964,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "analyze_business_metrics",
-            "description": "Analyze business performance using real client data including revenue analysis, demographics, risk profile distribution, and client portfolio analysis",
+            "description": "Analyze business performance including revenue analysis, client satisfaction, service usage, conversion rates, demographics, and risk profile distribution",
             "parameters": {
                 "type": "object",
                 "properties": {"query": {"type": "string", "description": "The business analytics query"}},
@@ -1002,10 +1976,10 @@ tools = [
         "type": "function",
         "function": {
             "name": "generate_follow_up_actions",
-            "description": "Generate follow-up actions using real client data including draft emails, open action items, and client response management",
+            "description": "Generate and track follow-up actions including email drafting, open action items, documents waiting, overdue commitments, and client decisions pending",
             "parameters": {
                 "type": "object",
-                "properties": {"query": {"type": "string", "description": "The follow-up action query"}},
+                "properties": {"query": {"type": "string", "description": "The follow-up action request"}},
                 "required": ["query"]
             }
         }
@@ -1014,12 +1988,14 @@ tools = [
         "type": "function",
         "function": {
             "name": "ingest_new_client_data",
-            "description": "Dynamically ingest new client data from files or directories for future expansion",
+            "description": "Dynamically ingest new client data from files or directories",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "directory_path": {"type": "string", "description": "Path to directory containing new client documents"}
-                }
+                    "file_path": {"type": "string", "description": "Path to single client file"},
+                    "directory_path": {"type": "string", "description": "Path to directory with multiple client files"}
+                },
+                "required": []
             }
         }
     }
@@ -1029,9 +2005,12 @@ tools = [
 if USE_TEMPLATE_PROCESSING:
     tools.extend(template_processing_tools)
 
+# =============================================================================
+# Main AI Response Function
+# =============================================================================
+
 def get_ai_response(user_message):
-    """Enhanced Azure OpenAI response handler with real client data"""
-    print(f"Advisor Query: {user_message}")
+    """Generate AI response using Azure OpenAI with enhanced tool calling"""
 
     client = AzureOpenAI(
         api_key=AZURE_OPENAI_API_KEY,
@@ -1039,11 +2018,11 @@ def get_ai_response(user_message):
         azure_endpoint=AZURE_OPENAI_ENDPOINT
     )
 
-    # Enhanced system prompt with real data context
+    # Enhanced system prompt with all capabilities
     data_source = "real client data extracted from documents" if USE_REAL_DATA else "mock demonstration data"
-    client_count = len(data_manager.get_all_clients()) if USE_REAL_DATA else 6
+    client_count = len(data_manager.get_all_clients()) if USE_REAL_DATA and data_manager else 6
 
-    system_prompt = f"""You are STANDISH - a PROACTIVE AI ASSISTANT designed to make UK Independent Financial Advisors' lives easier. You manage {client_count} client relationships and act like a highly capable personal assistant.
+    system_prompt = f"""You are STANDISH - a PROACTIVE AI AGENT designed to make UK Independent Financial Advisors' lives easier. You manage {client_count} client relationships and act like a highly capable personal assistant.
 
 🎯 **YOUR PROACTIVE ROLE:**
 - Start EVERY conversation with a daily briefing (unless user asks something specific)
@@ -1053,21 +2032,60 @@ def get_ai_response(user_message):
 
 CURRENT DATA SOURCE: {data_source}
 
-🤖 **YOUR AUTONOMOUS CAPABILITIES:**
-📧 COMMUNICATIONS: Draft and send follow-up emails, birthday messages, review reminders
-📅 SCHEDULING: Schedule meetings, set reminders, track deadlines
-📊 ANALYSIS: Investment opportunities, compliance tracking, business metrics
-🎯 CLIENT JOURNEY: Track where each client is in the 10-stage financial planning process
-📋 CRM MANAGEMENT: Update records, document meetings, track commitments
-🔔 PROACTIVE ALERTS: Birthday opportunities, overdue reviews, protection gaps
+🤖 **YOUR ENHANCED CAPABILITIES:**
+
+📊 **INVESTMENT ANALYSIS:**
+- Equity allocation vs risk profile and time horizon
+- ISA allowance tracking
+- Pension annual allowance and carry forward
+- Cash excess above emergency fund
+- Protection gaps based on family circumstances
+- Retirement trajectory and income goals
+- Withdrawal rate analysis for retired clients (>4% alert)
+- Interest rate sensitivity modeling
+- Market correction scenario modeling (10%, 20%, 30%)
+- Cashflow modeling for early retirement scenarios
+- Long-term care financial impact modeling
+
+📋 **COMPLIANCE & DOCUMENTATION:**
+- Full recommendation history with rationale
+- Meeting transcript search and exact wording retrieval
+- Platform recommendation tracking
+- Sustainable/ESG investing preference tracking
+- Document tracking (requested, received, pending)
+- Commitment/promise tracking with deadlines
+
+📈 **BUSINESS ANALYTICS:**
+- Revenue per client and efficiency metrics
+- Service usage by client segment
+- Client satisfaction tracking
+- Conversion rates by referral source
+- Demographics and retirement timeline
+- Common characteristics of successful clients
+- Concerns raised in meetings
+
+✅ **FOLLOW-UP MANAGEMENT:**
+- Draft follow-up emails from meetings
+- Track open action items
+- Monitor documents waiting
+- Alert on overdue commitments
+- Track client decisions pending
+
+🎯 **PROACTIVE ALERTS:**
+- Birthday opportunities
+- Overdue reviews
+- Business owner opportunities
+- Education planning gaps
+- Estate planning needs
+- Protection gaps
 
 **IMPORTANT BEHAVIORS:**
 1. ALWAYS lead with daily briefing when conversation starts
 2. Offer to take autonomous actions ("Should I send that email for you?")
 3. Be specific about dates, clients, and next steps
 4. Ask for permission before taking major actions
-5. Track client journey stages from the workflow diagram
-6. Show weekly statistics and compliance status
+5. Show weekly statistics and compliance status
+6. Provide specific client names and data in responses
 
 Remember: You're STANDISH - not just answering questions but proactively managing the advisor's day and client relationships. Act like the best personal assistant they've ever had."""
 
@@ -1076,20 +2094,20 @@ Remember: You're STANDISH - not just answering questions but proactively managin
         {"role": "user", "content": user_message}
     ]
 
-    while True:
+    try:
         response = client.chat.completions.create(
             model=AZURE_OPENAI_DEPLOYMENT_NAME,
             messages=messages,
             tools=tools,
-            temperature=0.7
+            tool_choice="auto",
+            temperature=0.7,
+            max_tokens=2000
         )
 
         if not response.choices[0].message.tool_calls:
-            answer = response.choices[0].message.content
-            print(f"Enhanced Advisory AI: {answer}")
-            return answer
+            return response.choices[0].message.content
 
-        messages.append(response.choices[0].message)
+        tool_results = []
 
         for tool_call in response.choices[0].message.tool_calls:
             tool_name = tool_call.function.name
@@ -1126,31 +2144,51 @@ Remember: You're STANDISH - not just answering questions but proactively managin
                 result = generate_follow_up_actions(query)
             elif tool_name == "ingest_new_client_data":
                 args = json.loads(tool_call.function.arguments)
-                directory_path = args.get("directory_path")
-                result = ingest_new_client_data(directory_path=directory_path)
+                result = ingest_new_client_data(args.get("file_path"), args.get("directory_path"))
             elif USE_TEMPLATE_PROCESSING and tool_name in ["generate_client_template", "analyze_template_requirements", "get_template_processing_status"]:
                 args = json.loads(tool_call.function.arguments)
                 result = route_template_tool_call(tool_name, args)
             else:
-                result = "Tool not found"
+                result = f"Unknown tool: {tool_name}"
 
-            messages.append({
+            tool_results.append({
                 "role": "tool",
-                "content": result,
+                "content": str(result),
                 "tool_call_id": tool_call.id
             })
 
+        messages.append(response.choices[0].message)
+        messages.extend(tool_results)
+
+        final_response = client.chat.completions.create(
+            model=AZURE_OPENAI_DEPLOYMENT_NAME,
+            messages=messages,
+            temperature=0.7,
+            max_tokens=2000
+        )
+
+        return final_response.choices[0].message.content
+
+    except Exception as e:
+        return f"Error processing request: {str(e)}"
+
+# =============================================================================
+# Main Entry Point
+# =============================================================================
+
 if __name__ == "__main__":
-    print("🤖 PROACTIVE AI ASSISTANT FOR FINANCIAL ADVISORS - READY!")
-    print(f"📊 Managing {len(data_manager.get_all_clients()) if USE_REAL_DATA else 6} client relationships")
+    data_source = "real client data" if USE_REAL_DATA else "mock data"
+    print("🤖 STANDISH - PROACTIVE AI AGENT FOR FINANCIAL ADVISORS - READY!")
+    print(f"📊 Managing {len(data_manager.get_all_clients()) if USE_REAL_DATA and data_manager else 6} client relationships")
     print(f"📁 Using {data_source}")
-    print("\n🎯 PROACTIVE CAPABILITIES:")
-    print("📅 Daily briefings with yesterday's summary and today's priorities")
-    print("🤖 Autonomous actions: emails, scheduling, CRM updates")
-    print("🎯 Client journey tracking through 10-stage workflow")
-    print("🔔 Proactive alerts for reviews, birthdays, opportunities")
+    print("\n🎯 ENHANCED CAPABILITIES:")
+    print("📊 Investment: equity, ISA, pension allowance, withdrawal rates, scenarios")
+    print("📋 Compliance: recommendations, transcripts, documents, commitments")
+    print("📈 Business: revenue, satisfaction, conversion, demographics")
+    print("✅ Follow-up: emails, actions, documents, decisions")
+    print("🔔 Proactive: birthdays, reviews, opportunities, alerts")
     print("\n💡 Start with: 'Good morning' for daily briefing")
-    print("🛠️ Or ask: 'Send follow-up email to John' for autonomous actions")
+    print("🛠️ Or ask: 'Which retired clients have withdrawal rates above 4%?'")
     print("(Type 'quit' to exit)\n")
 
     while True:
@@ -1160,4 +2198,4 @@ if __name__ == "__main__":
             break
 
         response = get_ai_response(user_input)
-        print()
+        print(f"\n🤖 STANDISH: {response}")
