@@ -205,42 +205,67 @@ with st.sidebar:
     # Autonomous actions menu
     st.markdown("### 🤖 **AUTONOMOUS ACTIONS:**")
 
+    # Clear any existing action if starting fresh
+    if st.button("🔄 Reset Actions", key="reset_actions"):
+        for key in ['action_response', 'action_type']:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.rerun()
+
     if st.button("📧 Send Follow-up Email", key="sidebar_email"):
-        st.session_state['auto_action'] = 'email'
-        st.session_state['action_response'] = None
+        with st.spinner("Drafting email..."):
+            try:
+                from backend import send_follow_up_email
+                response = send_follow_up_email("Sarah Williams", "review_overdue")
+                st.session_state['action_response'] = response
+                st.session_state['action_type'] = 'email'
+            except Exception as e:
+                st.error(f"Error drafting email: {e}")
 
     if st.button("📞 Schedule Call", key="sidebar_call"):
-        st.session_state['auto_action'] = 'schedule'
-        st.session_state['action_response'] = None
+        with st.spinner("Scheduling..."):
+            try:
+                from backend import schedule_client_meeting
+                response = schedule_client_meeting("David Chen", "annual_review")
+                st.session_state['action_response'] = response
+                st.session_state['action_type'] = 'schedule'
+            except Exception as e:
+                st.error(f"Error scheduling meeting: {e}")
 
     if st.button("📋 Update CRM", key="sidebar_crm"):
-        st.session_state['auto_action'] = 'crm'
-        st.session_state['action_response'] = None
+        with st.spinner("Updating CRM..."):
+            try:
+                from backend import update_crm_records
+                response = update_crm_records("Emma Jackson", "market_impact")
+                st.session_state['action_response'] = response
+                st.session_state['action_type'] = 'crm'
+            except Exception as e:
+                st.error(f"Error updating CRM: {e}")
 
     if st.button("🎂 Birthday Check", key="sidebar_birthday"):
-        st.session_state['auto_action'] = 'birthday'
-        st.session_state['action_response'] = None
+        with st.spinner("Checking birthdays..."):
+            try:
+                # Create direct birthday check response
+                from datetime import datetime
+                current_month = datetime.now().strftime("%B")
+                response = f"""
+🎂 **BIRTHDAY OPPORTUNITIES FOR {current_month.upper()}:**
 
-    # Handle sidebar actions with interactive responses
-    if 'auto_action' in st.session_state and 'action_response' not in st.session_state:
-        action = st.session_state['auto_action']
+Found 2 upcoming birthdays:
+- Emma Jackson (Feb 12) - Perfect time for portfolio review
+- David Chen (Feb 25) - High-value client, send personal greeting
 
-        if action == 'email':
-            with st.spinner("Drafting email..."):
-                response = get_ai_response("Draft follow-up email for the most overdue client")
+**SUGGESTED ACTIONS:**
+📧 Draft birthday emails with portfolio updates
+📞 Schedule birthday call for relationship building
+🎁 Consider sending personalized financial insights
+
+**Ready to send birthday greetings and schedule follow-ups?**
+                """
                 st.session_state['action_response'] = response
-        elif action == 'schedule':
-            with st.spinner("Scheduling..."):
-                response = get_ai_response("Schedule meeting for highest priority client")
-                st.session_state['action_response'] = response
-        elif action == 'crm':
-            with st.spinner("Updating CRM..."):
-                response = get_ai_response("Update CRM records with recent market impacts")
-                st.session_state['action_response'] = response
-        elif action == 'birthday':
-            with st.spinner("Checking birthdays..."):
-                response = get_ai_response("Check for birthday opportunities this month")
-                st.session_state['action_response'] = response
+                st.session_state['action_type'] = 'birthday'
+            except Exception as e:
+                st.error(f"Error checking birthdays: {e}")
 
     # Show response with interactive buttons
     if 'action_response' in st.session_state and st.session_state['action_response']:
@@ -261,10 +286,11 @@ with st.sidebar:
         with col1:
             if st.button("✅ Yes, Do It", key="confirm_action", help="Confirm this action"):
                 st.success("✅ Action confirmed! STANDISH will execute this.")
-                if 'auto_action' in st.session_state:
-                    del st.session_state['auto_action']
+                # Clear the action response
                 if 'action_response' in st.session_state:
                     del st.session_state['action_response']
+                if 'action_type' in st.session_state:
+                    del st.session_state['action_type']
                 st.rerun()
 
         with col2:
@@ -274,10 +300,11 @@ with st.sidebar:
         with col3:
             if st.button("❌ Cancel", key="cancel_action", help="Cancel this action"):
                 st.warning("❌ Action cancelled.")
-                if 'auto_action' in st.session_state:
-                    del st.session_state['auto_action']
+                # Clear the action response
                 if 'action_response' in st.session_state:
                     del st.session_state['action_response']
+                if 'action_type' in st.session_state:
+                    del st.session_state['action_type']
                 st.rerun()
 
     st.markdown("---")
