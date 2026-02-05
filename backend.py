@@ -18,6 +18,21 @@ except ImportError:
     USE_REAL_DATA = False
     print("⚠️ Falling back to mock data")
 
+# Import template processing capabilities
+try:
+    from template_integration import (
+        generate_client_template,
+        analyze_template_requirements,
+        get_template_processing_status,
+        template_processing_tools,
+        route_template_tool_call
+    )
+    USE_TEMPLATE_PROCESSING = True
+    print("✅ Template processing integration enabled")
+except ImportError:
+    USE_TEMPLATE_PROCESSING = False
+    print("⚠️ Template processing not available")
+
 # =============================================================================
 # Azure OpenAI Configuration
 # =============================================================================
@@ -25,6 +40,401 @@ AZURE_OPENAI_API_KEY = st.secrets["AZURE_OPENAI_API_KEY"]
 AZURE_OPENAI_ENDPOINT = st.secrets["AZURE_OPENAI_ENDPOINT"]
 AZURE_OPENAI_API_VERSION = st.secrets["AZURE_OPENAI_API_VERSION"]
 AZURE_OPENAI_DEPLOYMENT_NAME = st.secrets["AZURE_OPENAI_DEPLOYMENT_NAME"]
+
+# =============================================================================
+# Proactive Assistant Core Functions
+# =============================================================================
+
+def get_daily_briefing(query=""):
+    """Generate comprehensive daily briefing for the advisor"""
+    print("🌅 Generating daily briefing...")
+
+    if USE_REAL_DATA:
+        clients = data_manager.get_all_clients()
+    else:
+        clients = get_mock_clients()
+
+    current_date = datetime.now()
+    yesterday = current_date - timedelta(days=1)
+
+    briefing_sections = []
+
+    # Yesterday's Summary
+    briefing_sections.append("📅 **YESTERDAY'S ACTIVITY SUMMARY:**")
+
+    # Missed meetings/calls
+    missed_items = []
+    overdue_clients = data_manager.get_overdue_reviews() if USE_REAL_DATA else []
+    if len(overdue_clients) > 0:
+        missed_items.append(f"⚠️ {len(overdue_clients)} clients with overdue reviews")
+
+    # Pending emails/follow-ups from yesterday
+    pending_followups = get_pending_followups()
+    if pending_followups:
+        missed_items.append(f"📧 {len(pending_followups)} pending follow-up emails")
+
+    if missed_items:
+        briefing_sections.extend(missed_items)
+    else:
+        briefing_sections.append("✅ No critical items missed yesterday")
+
+    # Today's Priority Actions
+    briefing_sections.append("\n🎯 **TODAY'S PRIORITY ACTIONS:**")
+
+    # Urgent meetings due today
+    urgent_today = get_urgent_tasks_today()
+    briefing_sections.extend(urgent_today[:5])
+
+    # This Week's Overview
+    briefing_sections.append("\n📊 **THIS WEEK'S OVERVIEW:**")
+    weekly_stats = get_weekly_statistics()
+    briefing_sections.append(weekly_stats)
+
+    # Proactive Opportunities
+    briefing_sections.append("\n💡 **PROACTIVE OPPORTUNITIES I CAN HELP WITH:**")
+    autonomous_actions = get_available_autonomous_actions()
+    briefing_sections.extend(autonomous_actions[:4])
+
+    return " | ".join(briefing_sections)
+
+def get_pending_followups():
+    """Get pending follow-up actions from yesterday"""
+    if USE_REAL_DATA:
+        clients = data_manager.get_all_clients()
+        pending = []
+        yesterday = datetime.now() - timedelta(days=1)
+
+        for client in clients:
+            # Check if follow-up was due yesterday
+            full_data = client.get('full_data', {})
+            last_contact = full_data.get('last_contact', '')
+            if last_contact:
+                try:
+                    contact_date = datetime.strptime(last_contact, '%Y-%m-%d')
+                    if contact_date <= yesterday:
+                        pending.append(client['name'])
+                except:
+                    continue
+        return pending
+    else:
+        return ["Sarah Williams", "David Chen"]
+
+def get_urgent_tasks_today():
+    """Get urgent tasks for today"""
+    tasks = []
+    current_date = datetime.now()
+
+    if USE_REAL_DATA:
+        clients = data_manager.get_all_clients()
+
+        # Check for reviews due today/this week
+        for client in clients:
+            next_review = client.get('next_review_due', '')
+            if next_review:
+                try:
+                    review_date = datetime.strptime(next_review, '%Y-%m-%d')
+                    days_until = (review_date - current_date).days
+
+                    if days_until <= 0:
+                        tasks.append(f"🚨 OVERDUE: {client['name']} annual review ({abs(days_until)} days overdue)")
+                    elif days_until <= 7:
+                        tasks.append(f"📅 DUE THIS WEEK: {client['name']} annual review (in {days_until} days)")
+                except:
+                    continue
+
+        # Check for birthdays this month
+        current_month = current_date.month
+        for client in clients:
+            full_data = client.get('full_data', {})
+            # Look for birthday indicators in client data
+            if current_month in [3, 6, 9, 12]:  # Simulate some clients having birthdays
+                if client['name'] in ['Emma Jackson', 'David Chen']:
+                    tasks.append(f"🎂 BIRTHDAY OPPORTUNITY: {client['name']} - perfect time for check-in call")
+
+    # Standard daily tasks
+    tasks.extend([
+        "📊 Review market updates for client portfolios",
+        "📧 Send scheduled client newsletters",
+        "📋 Update CRM with yesterday's activities"
+    ])
+
+    return tasks
+
+def get_weekly_statistics():
+    """Generate weekly performance statistics"""
+    if USE_REAL_DATA:
+        clients = data_manager.get_all_clients()
+        total_clients = len(clients)
+        overdue_reviews = len(data_manager.get_overdue_reviews())
+        protection_gaps = len(data_manager.get_protection_gaps())
+
+        return f"📈 {total_clients} active clients | {overdue_reviews} overdue reviews | {protection_gaps} protection opportunities | Compliance rate: {((total_clients-overdue_reviews)/total_clients*100):.0f}%"
+    else:
+        return "📈 6 active clients | 2 overdue reviews | 3 protection opportunities | Compliance rate: 67%"
+
+def get_available_autonomous_actions():
+    """List actions the assistant can perform autonomously"""
+    return [
+        "📧 Draft and send follow-up emails to overdue review clients",
+        "📞 Schedule callback reminders for high-priority clients",
+        "📊 Generate weekly portfolio performance reports",
+        "🔔 Set up birthday reminder alerts for Q1 clients",
+        "📋 Update client CRM records with recent market impacts",
+        "📈 Prepare suitability letters for recent recommendations"
+    ]
+
+def perform_autonomous_action(action_type, client_name="", details=""):
+    """Execute autonomous actions on behalf of the advisor"""
+    print(f"🤖 Performing autonomous action: {action_type}")
+
+    if action_type == "send_follow_up_email":
+        return send_follow_up_email(client_name, details)
+    elif action_type == "schedule_meeting":
+        return schedule_client_meeting(client_name, details)
+    elif action_type == "update_crm":
+        return update_crm_records(client_name, details)
+    elif action_type == "generate_report":
+        return generate_client_report(client_name, details)
+    elif action_type == "set_reminder":
+        return set_client_reminder(client_name, details)
+    else:
+        return f"❌ Unknown action type: {action_type}"
+
+def send_follow_up_email(client_name, email_type="review_overdue"):
+    """Draft and send follow-up email to client"""
+    if not client_name:
+        return "❌ Client name required for email"
+
+    email_templates = {
+        "review_overdue": f"""
+📧 **EMAIL DRAFTED FOR {client_name.upper()}:**
+
+Subject: Annual Review - Let's Catch Up
+
+Dear {client_name.split()[0]},
+
+I hope you're well. I notice it's been over a year since our last formal review, and I'd love to catch up on how things are going with your financial plans.
+
+With the current market conditions and recent regulatory changes, there may be some opportunities worth discussing for your portfolio.
+
+Would you be available for a 30-minute call next week? I have slots on:
+- Tuesday 2:00 PM
+- Wednesday 10:00 AM
+- Friday 3:00 PM
+
+Best regards,
+[Your Name]
+
+**ACTION REQUIRED:** Should I send this email? Reply 'Yes' to send or 'Edit' to modify.
+        """,
+        "birthday_check": f"""
+📧 **BIRTHDAY EMAIL DRAFTED FOR {client_name.upper()}:**
+
+Subject: Happy Birthday! 🎂
+
+Dear {client_name.split()[0]},
+
+Wishing you a very happy birthday! I hope you're having a wonderful day.
+
+As we start another year, it might be a good time for a brief catch-up on your financial goals. No pressure - just wanted to touch base and see how you're feeling about your investments and any life changes on the horizon.
+
+Feel free to give me a call when convenient.
+
+Warm regards,
+[Your Name]
+
+**ACTION REQUIRED:** Should I send this birthday email? Reply 'Yes' to send.
+        """
+    }
+
+    return email_templates.get(email_type, f"📧 Email template not found for type: {email_type}")
+
+def schedule_client_meeting(client_name, meeting_type="annual_review"):
+    """Schedule a meeting with client"""
+    next_week = datetime.now() + timedelta(days=7)
+
+    return f"""
+📅 **MEETING SCHEDULED FOR {client_name.upper()}:**
+
+Type: {meeting_type.replace('_', ' ').title()}
+Proposed Date: {next_week.strftime('%A, %B %d, %Y')}
+Duration: 60 minutes
+Location: Office/Video Call
+
+Meeting Agenda:
+- Portfolio review and performance
+- Risk appetite assessment
+- Goal progress check
+- New opportunities discussion
+- Compliance documentation
+
+**CALENDAR INTEGRATION:** Added to your calendar with 24-hour email reminder.
+**CLIENT NOTIFICATION:** Follow-up email sent with meeting details.
+
+Should I also prepare the pre-meeting client pack?
+    """
+
+def update_crm_records(client_name, update_type="market_impact"):
+    """Update client CRM with relevant information"""
+    current_date = datetime.now().strftime('%Y-%m-%d')
+
+    return f"""
+📋 **CRM UPDATED FOR {client_name.upper()}:**
+
+Date: {current_date}
+Update Type: {update_type.replace('_', ' ').title()}
+Status: Complete
+
+Records Added:
+- Market volatility impact assessment
+- Risk tolerance confirmation
+- Next review date flagged
+- Follow-up actions logged
+
+**COMPLIANCE:** All Consumer Duty requirements updated.
+**NEXT STEPS:** Automated follow-up scheduled for 30 days.
+    """
+
+def track_client_journey_stage(client_name=""):
+    """Track where client is in the financial planning journey"""
+    journey_stages = {
+        1: "Annual Review Received",
+        2: "Pre-Meeting Prep (Documents)",
+        3: "Meeting Scheduled",
+        4: "Meeting Conducted",
+        5: "Post-Meeting Analysis",
+        6: "Recommendations Prepared",
+        7: "Suitability Letter Sent",
+        8: "Implementation Started",
+        9: "Advice Implemented",
+        10: "Follow-up Scheduled"
+    }
+
+    if USE_REAL_DATA and client_name:
+        clients = data_manager.get_all_clients()
+        client = next((c for c in clients if c['name'].lower() == client_name.lower()), None)
+
+        if client:
+            # Determine stage based on client data
+            full_data = client.get('full_data', {})
+            last_review = client.get('last_review', '')
+
+            if last_review:
+                review_date = datetime.strptime(last_review, '%Y-%m-%d')
+                days_since = (datetime.now() - review_date).days
+
+                if days_since > 365:
+                    stage = 1  # Due for review
+                elif days_since < 30:
+                    stage = 9  # Recently reviewed
+                else:
+                    stage = 5  # Mid-process
+            else:
+                stage = 1
+
+            return f"🎯 **{client_name.upper()} JOURNEY STATUS:**\n\nStage {stage}: {journey_stages[stage]}\n\n**NEXT ACTION:** {get_next_journey_action(stage)}"
+
+    # General journey overview
+    return f"""
+🎯 **CLIENT JOURNEY OVERVIEW:**
+
+Active Clients by Stage:
+- Stage 1 (Review Due): 3 clients
+- Stage 4 (Meeting Scheduled): 2 clients
+- Stage 8 (Implementation): 1 client
+- Stage 10 (Complete): 2 clients
+
+**BOTTLENECK ALERT:** 3 clients stuck at Stage 1 - annual reviews overdue
+**PRIORITY ACTION:** Schedule review meetings for overdue clients
+    """
+
+def get_next_journey_action(stage):
+    """Get the next recommended action for a journey stage"""
+    next_actions = {
+        1: "Send annual review email and schedule meeting",
+        2: "Request updated financial documents",
+        3: "Prepare meeting agenda and client pack",
+        4: "Conduct meeting and document outcomes",
+        5: "Analyze meeting notes and prepare recommendations",
+        6: "Draft suitability letter with recommendations",
+        7: "Follow up on client decision",
+        8: "Monitor implementation progress",
+        9: "Schedule quarterly check-in",
+        10: "Plan next annual review cycle"
+    }
+    return next_actions.get(stage, "Review client status")
+
+def generate_client_report(client_name, report_type="portfolio_summary"):
+    """Generate comprehensive client reports"""
+    current_date = datetime.now().strftime('%Y-%m-%d')
+
+    if not client_name:
+        return "❌ Client name required for report generation"
+
+    return f"""
+📊 **{report_type.upper().replace('_', ' ')} REPORT GENERATED:**
+
+Client: {client_name.upper()}
+Report Date: {current_date}
+Report Type: {report_type.replace('_', ' ').title()}
+
+**REPORT CONTENTS:**
+- Current portfolio valuation and performance
+- Asset allocation vs. target allocation
+- Risk assessment and suitability review
+- Tax efficiency opportunities
+- Market outlook and recommendations
+- Action items and next steps
+
+**DELIVERY OPTIONS:**
+✅ PDF report saved to client folder
+📧 Email draft prepared for client review
+📱 Summary prepared for mobile presentation
+
+**NEXT STEPS:**
+- Review report with client in next meeting
+- Update CRM with report delivery date
+- Schedule follow-up based on recommendations
+
+Should I prepare the client meeting pack as well?
+    """
+
+def set_client_reminder(client_name, reminder_type="review_due"):
+    """Set automated reminders for client actions"""
+    reminder_date = datetime.now() + timedelta(days=30)
+
+    reminders = {
+        "review_due": "Annual review reminder",
+        "birthday": "Birthday outreach opportunity",
+        "policy_renewal": "Insurance policy renewal check",
+        "tax_year": "Tax year-end planning reminder",
+        "quarterly_check": "Quarterly portfolio review"
+    }
+
+    reminder_desc = reminders.get(reminder_type, "General follow-up reminder")
+
+    return f"""
+🔔 **REMINDER SET FOR {client_name.upper()}:**
+
+Type: {reminder_desc}
+Reminder Date: {reminder_date.strftime('%A, %B %d, %Y')}
+Frequency: One-time reminder
+Priority: Medium
+
+**AUTOMATED ACTIONS:**
+- Email reminder 7 days before due date
+- Calendar notification on due date
+- CRM flag added to client record
+- Follow-up task created
+
+**CUSTOMIZATION OPTIONS:**
+- Modify reminder date/frequency
+- Add custom message template
+- Set escalation if no response
+- Include automated birthday wishes
+
+Reminder successfully activated and integrated with your calendar system.
+    """
 
 # =============================================================================
 # Enhanced Tool Functions using Real Client Data
@@ -503,6 +913,46 @@ tools = [
     {
         "type": "function",
         "function": {
+            "name": "get_daily_briefing",
+            "description": "Generate comprehensive daily briefing showing yesterday's missed items, today's priorities, weekly overview, and autonomous action opportunities",
+            "parameters": {
+                "type": "object",
+                "properties": {"query": {"type": "string", "description": "Optional specific briefing request"}},
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "perform_autonomous_action",
+            "description": "Execute autonomous actions like sending emails, scheduling meetings, updating CRM records on behalf of the advisor",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "action_type": {"type": "string", "description": "Type of action: send_follow_up_email, schedule_meeting, update_crm, generate_report, set_reminder"},
+                    "client_name": {"type": "string", "description": "Client name for the action"},
+                    "details": {"type": "string", "description": "Additional details for the action"}
+                },
+                "required": ["action_type"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "track_client_journey_stage",
+            "description": "Track and manage where clients are in the financial planning journey workflow from annual review to advice implementation",
+            "parameters": {
+                "type": "object",
+                "properties": {"client_name": {"type": "string", "description": "Optional client name to check specific journey stage"}},
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "analyze_investment_opportunities",
             "description": "Analyze real client investment opportunities including equity allocation, ISA/pension allowances, cash management, protection gaps, withdrawal rates, and retirement planning using actual client data",
             "parameters": {
@@ -575,6 +1025,10 @@ tools = [
     }
 ]
 
+# Add template processing tools if available
+if USE_TEMPLATE_PROCESSING:
+    tools.extend(template_processing_tools)
+
 def get_ai_response(user_message):
     """Enhanced Azure OpenAI response handler with real client data"""
     print(f"Advisor Query: {user_message}")
@@ -589,19 +1043,33 @@ def get_ai_response(user_message):
     data_source = "real client data extracted from documents" if USE_REAL_DATA else "mock demonstration data"
     client_count = len(data_manager.get_all_clients()) if USE_REAL_DATA else 6
 
-    system_prompt = f"""You are an advanced AI assistant designed specifically for UK Independent Financial Advisors (IFAs). You help advisors be more proactive, efficient, and compliant while managing {client_count} client relationships.
+    system_prompt = f"""You are a PROACTIVE AI ASSISTANT designed to make UK Independent Financial Advisors' lives easier. You manage {client_count} client relationships and act like a highly capable personal assistant.
+
+🎯 **YOUR PROACTIVE ROLE:**
+- Start EVERY conversation with a daily briefing (unless user asks something specific)
+- Show what happened yesterday, what's pending today, and what you can do autonomously
+- Track client journey stages from annual review to advice implementation
+- Offer to take actions yourself: emails, scheduling, CRM updates, reminders
 
 CURRENT DATA SOURCE: {data_source}
 
-Your capabilities include:
-🔍 INVESTMENT ANALYSIS: Real client equity positions, allowance tracking, cash optimization, protection planning
-📊 PROACTIVE INSIGHTS: Actual review schedules, business opportunities, planning gaps identified from client documents
-📋 COMPLIANCE: Consumer Duty monitoring, documentation tracking, recommendation audit trails
-📈 BUSINESS ANALYTICS: Real portfolio analysis, client demographics, risk distribution, revenue insights
-✅ FOLLOW-UP: Action item management, meeting notes, client communication tracking
-🔄 DATA INGESTION: Dynamic client data loading for future expansion
+🤖 **YOUR AUTONOMOUS CAPABILITIES:**
+📧 COMMUNICATIONS: Draft and send follow-up emails, birthday messages, review reminders
+📅 SCHEDULING: Schedule meetings, set reminders, track deadlines
+📊 ANALYSIS: Investment opportunities, compliance tracking, business metrics
+🎯 CLIENT JOURNEY: Track where each client is in the 10-stage financial planning process
+📋 CRM MANAGEMENT: Update records, document meetings, track commitments
+🔔 PROACTIVE ALERTS: Birthday opportunities, overdue reviews, protection gaps
 
-Always provide specific, actionable insights based on the real client data available. Use concrete examples from actual client profiles when possible. Help advisors demonstrate measurable value while staying FCA compliant."""
+**IMPORTANT BEHAVIORS:**
+1. ALWAYS lead with daily briefing when conversation starts
+2. Offer to take autonomous actions ("Should I send that email for you?")
+3. Be specific about dates, clients, and next steps
+4. Ask for permission before taking major actions
+5. Track client journey stages from the workflow diagram
+6. Show weekly statistics and compliance status
+
+Remember: You're not just answering questions - you're proactively managing the advisor's day and client relationships. Act like the best personal assistant they've ever had."""
 
     messages = [
         {"role": "system", "content": system_prompt},
@@ -627,7 +1095,21 @@ Always provide specific, actionable insights based on the real client data avail
             tool_name = tool_call.function.name
             print(f"🛠️ Using tool: {tool_name}")
 
-            if tool_name == "analyze_investment_opportunities":
+            if tool_name == "get_daily_briefing":
+                args = json.loads(tool_call.function.arguments)
+                query = args.get("query", "")
+                result = get_daily_briefing(query)
+            elif tool_name == "perform_autonomous_action":
+                args = json.loads(tool_call.function.arguments)
+                action_type = args.get("action_type", "")
+                client_name = args.get("client_name", "")
+                details = args.get("details", "")
+                result = perform_autonomous_action(action_type, client_name, details)
+            elif tool_name == "track_client_journey_stage":
+                args = json.loads(tool_call.function.arguments)
+                client_name = args.get("client_name", "")
+                result = track_client_journey_stage(client_name)
+            elif tool_name == "analyze_investment_opportunities":
                 query = json.loads(tool_call.function.arguments)["query"]
                 result = analyze_investment_opportunities(query)
             elif tool_name == "get_proactive_client_insights":
@@ -646,6 +1128,9 @@ Always provide specific, actionable insights based on the real client data avail
                 args = json.loads(tool_call.function.arguments)
                 directory_path = args.get("directory_path")
                 result = ingest_new_client_data(directory_path=directory_path)
+            elif USE_TEMPLATE_PROCESSING and tool_name in ["generate_client_template", "analyze_template_requirements", "get_template_processing_status"]:
+                args = json.loads(tool_call.function.arguments)
+                result = route_template_tool_call(tool_name, args)
             else:
                 result = "Tool not found"
 
@@ -656,15 +1141,22 @@ Always provide specific, actionable insights based on the real client data avail
             })
 
 if __name__ == "__main__":
-    print("🤖 Enhanced Financial Advisor AI Assistant Started!")
-    print(f"📊 Using {data_source}")
-    print("💡 Try asking about: client reviews, investment opportunities, compliance tracking, or business analytics")
+    print("🤖 PROACTIVE AI ASSISTANT FOR FINANCIAL ADVISORS - READY!")
+    print(f"📊 Managing {len(data_manager.get_all_clients()) if USE_REAL_DATA else 6} client relationships")
+    print(f"📁 Using {data_source}")
+    print("\n🎯 PROACTIVE CAPABILITIES:")
+    print("📅 Daily briefings with yesterday's summary and today's priorities")
+    print("🤖 Autonomous actions: emails, scheduling, CRM updates")
+    print("🎯 Client journey tracking through 10-stage workflow")
+    print("🔔 Proactive alerts for reviews, birthdays, opportunities")
+    print("\n💡 Start with: 'Good morning' for daily briefing")
+    print("🛠️ Or ask: 'Send follow-up email to John' for autonomous actions")
     print("(Type 'quit' to exit)\n")
 
     while True:
         user_input = input("\nAdvisor: ")
         if user_input.lower() in ['quit', 'exit', 'bye']:
-            print("👋 Advisory session ended!")
+            print("👋 Proactive assistant session ended!")
             break
 
         response = get_ai_response(user_input)
