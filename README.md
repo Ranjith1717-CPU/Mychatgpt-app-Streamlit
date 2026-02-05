@@ -1,5 +1,12 @@
 # 🏦 STANDISH - Proactive AI Assistant for Financial Advisors
 
+## 🌐 **Try STANDISH Live Demo**
+**🚀 Experience STANDISH Now:** [https://ranjithchatgptapp.streamlit.app/](https://ranjithchatgptapp.streamlit.app/)
+
+✅ Full proactive daily briefings | ✅ Autonomous actions | ✅ Client journey tracking | ✅ Enhanced contextual suggestions
+
+---
+
 ## Overview
 STANDISH is a revolutionary proactive AI assistant designed for UK Independent Financial Advisors (IFAs). Unlike traditional chatbots that wait for questions, STANDISH proactively manages your day, automatically provides daily briefings, and takes autonomous actions to help you stay ahead of client needs while maintaining FCA compliance.
 
