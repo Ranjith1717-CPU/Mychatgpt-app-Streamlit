@@ -54,6 +54,274 @@ except (KeyError, TypeError):
     AZURE_OPENAI_DEPLOYMENT_NAME = "mock-deployment"
 
 # =============================================================================
+# NEW: PROACTIVE AGENT LAYER - Right Moment, Right Context, Right Intent
+# =============================================================================
+
+# Contextual triggers for proactive suggestions
+contextual_triggers = {
+    "meeting_keywords": {
+        "retirement": {
+            "trigger_phrases": ["retire early", "retirement age", "when to retire", "retirement planning"],
+            "suggestion": "🎯 PROACTIVE: Client mentioned retirement - suggest pension review and withdrawal planning",
+            "action": "add_to_meeting_notes"
+        },
+        "protection": {
+            "trigger_phrases": ["life insurance", "what if something happens", "protect my family", "breadwinner"],
+            "suggestion": "🛡️ PROACTIVE: Protection gap identified - recommend life insurance review",
+            "action": "flag_protection_review"
+        },
+        "tax": {
+            "trigger_phrases": ["tax bill", "reduce tax", "tax efficient", "HMRC"],
+            "suggestion": "💰 PROACTIVE: Tax concern raised - discuss ISA/pension optimization",
+            "action": "schedule_tax_planning"
+        },
+        "inheritance": {
+            "trigger_phrases": ["leave money", "inheritance", "estate planning", "when I die"],
+            "suggestion": "📋 PROACTIVE: Estate planning mentioned - add IHT review to agenda",
+            "action": "flag_estate_planning"
+        },
+        "business": {
+            "trigger_phrases": ["sell the business", "exit strategy", "business value", "succession"],
+            "suggestion": "💼 PROACTIVE: Business exit mentioned - discuss CGT planning and liquidity",
+            "action": "flag_business_planning"
+        }
+    },
+    "missed_topics": {
+        "annual_review_gaps": [
+            "Did not discuss retirement timeline - add pension projection?",
+            "No protection review mentioned - flag for next meeting?",
+            "Tax planning not covered - schedule separate session?",
+            "Investment risk tolerance not reassessed - needs update?",
+            "Estate planning status unclear - follow up required?"
+        ]
+    }
+}
+
+# Real-time meeting context detection
+meeting_context = {
+    "current_meeting": {
+        "client": "",
+        "type": "annual_review",
+        "duration": 0,
+        "topics_covered": [],
+        "topics_missed": [],
+        "proactive_suggestions": []
+    }
+}
+
+def detect_proactive_moment(text_input, context="meeting"):
+    """
+    CORE PROACTIVE FUNCTION: Detect right moment for suggestions
+
+    Args:
+        text_input: What the client/advisor just said
+        context: meeting, email, call, report_review
+
+    Returns:
+        Proactive suggestion or None
+    """
+    text_lower = text_input.lower()
+    suggestions = []
+
+    # RIGHT MOMENT detection
+    for topic, data in contextual_triggers["meeting_keywords"].items():
+        for phrase in data["trigger_phrases"]:
+            if phrase in text_lower:
+                # RIGHT CONTEXT + RIGHT INTENT
+                suggestion = {
+                    "moment": "NOW",
+                    "context": f"Client mentioned '{phrase}'",
+                    "intent": data["suggestion"],
+                    "action": data["action"],
+                    "topic": topic
+                }
+                suggestions.append(suggestion)
+
+    return suggestions
+
+def generate_meeting_interruption(client_name, detected_topic):
+    """Generate contextual interruption suggestions during meetings"""
+
+    interruptions = {
+        "retirement": f"""
+🚨 **PROACTIVE INTERRUPTION**
+
+**CONTEXT:** {client_name} just mentioned retirement planning
+
+**SUGGESTION:** "Before we move on, shall we quickly model your retirement timeline?
+I can show you the impact of retiring at 60 vs 65 on your pension pot."
+
+**QUICK ACTIONS:**
+✅ Add pension projection to meeting
+❌ Note for follow-up
+📊 Run retirement calculator now
+        """,
+
+        "protection": f"""
+🚨 **PROACTIVE INTERRUPTION**
+
+**CONTEXT:** {client_name} mentioned protecting their family
+
+**SUGGESTION:** "You mentioned protection - let me quickly check your current cover.
+Your income is £{80000}, but life cover is only £{200000}. Shall we discuss this?"
+
+**QUICK ACTIONS:**
+✅ Review protection gaps now
+❌ Schedule separate meeting
+📋 Add to action items
+        """,
+
+        "tax": f"""
+🚨 **PROACTIVE INTERRUPTION**
+
+**CONTEXT:** {client_name} concerned about tax efficiency
+
+**SUGGESTION:** "You still have £{12000} ISA allowance remaining.
+Shall we discuss transferring some of your savings to reduce tax?"
+
+**QUICK ACTIONS:**
+✅ Discuss ISA transfer now
+❌ Add to next meeting agenda
+💰 Calculate tax savings
+        """
+    }
+
+    return interruptions.get(detected_topic, "No specific interruption available")
+
+def check_meeting_completeness(client_name, meeting_duration_minutes):
+    """Check if key topics were missed during meeting"""
+
+    standard_agenda = [
+        "portfolio_performance",
+        "risk_assessment",
+        "protection_review",
+        "retirement_planning",
+        "tax_efficiency",
+        "estate_planning"
+    ]
+
+    # Simulate topics covered (in real system, this would track actual discussion)
+    covered_topics = ["portfolio_performance", "risk_assessment"]
+    missed_topics = [topic for topic in standard_agenda if topic not in covered_topics]
+
+    suggestions = []
+
+    if "retirement_planning" in missed_topics:
+        suggestions.append({
+            "type": "missing_topic",
+            "suggestion": f"🎯 You didn't discuss retirement timeline with {client_name} - add pension projection to report?",
+            "urgency": "medium",
+            "action": "add_to_report"
+        })
+
+    if "protection_review" in missed_topics:
+        suggestions.append({
+            "type": "missing_topic",
+            "suggestion": f"🛡️ Protection gaps not reviewed - {client_name} mentioned family concerns earlier",
+            "urgency": "high",
+            "action": "schedule_protection_meeting"
+        })
+
+    if meeting_duration_minutes < 45:
+        suggestions.append({
+            "type": "time_alert",
+            "suggestion": f"⏰ Meeting was only {meeting_duration_minutes} minutes - several topics not covered. Extend or schedule follow-up?",
+            "urgency": "medium",
+            "action": "extend_or_reschedule"
+        })
+
+    return suggestions
+
+def get_proactive_post_meeting_actions(client_name, meeting_notes=""):
+    """Generate proactive actions immediately after meeting ends"""
+
+    return f"""
+🤖 **STANDISH PROACTIVE POST-MEETING ANALYSIS**
+
+**CLIENT:** {client_name}
+**MEETING COMPLETED:** {datetime.now().strftime('%H:%M on %B %d')}
+
+**IMMEDIATE ACTIONS DETECTED:**
+
+1. **📧 FOLLOW-UP EMAIL**
+   ✅ Draft thank you email with meeting summary?
+   ✅ Include action items and next steps?
+
+2. **📋 CRM UPDATES**
+   ✅ Log meeting notes and commitments?
+   ✅ Update client risk profile if discussed?
+
+3. **⚠️ MISSED OPPORTUNITIES**
+   • Retirement age not confirmed - add to next meeting?
+   • Protection review skipped - client mentioned family concerns
+   • Tax planning not discussed - they have unused allowances
+
+4. **📅 NEXT STEPS**
+   ✅ Schedule follow-up meeting for missed topics?
+   ✅ Set reminder for promised documents?
+   ✅ Flag urgent actions for this week?
+
+**WOULD YOU LIKE STANDISH TO HANDLE THESE AUTOMATICALLY?**
+    """
+
+def get_proactive_daily_moments():
+    """
+    Analyze recent client data and interactions to surface proactive moments
+    for inclusion in daily briefings - Right Moment, Right Context, Right Intent
+    """
+
+    # Simulated recent client interactions and contextual analysis
+    recent_interactions = [
+        {
+            "client": "Sarah Williams",
+            "source": "email_response",
+            "context": "Client replied 'thinking about retiring at 60 instead of 65'",
+            "moment": "🎯 Sarah Williams mentioned early retirement - suggest pension modeling session THIS WEEK",
+            "urgency": "high",
+            "action": "schedule_retirement_planning"
+        },
+        {
+            "client": "David Chen",
+            "source": "annual_review_notes",
+            "context": "Mentioned 'concerned about protecting the family business'",
+            "moment": "🛡️ David Chen raised business protection concerns - keyman insurance opportunity",
+            "urgency": "medium",
+            "action": "review_business_protection"
+        },
+        {
+            "client": "Lisa Patel",
+            "source": "phone_call_transcript",
+            "context": "Asked 'what's the most tax-efficient way to take money out'",
+            "moment": "💰 Lisa Patel asked about tax efficiency - dividend vs salary optimization needed",
+            "urgency": "medium",
+            "action": "tax_planning_session"
+        },
+        {
+            "client": "Emma Jackson",
+            "source": "meeting_follow_up",
+            "context": "Mentioned 'thinking of downsizing the house next year'",
+            "moment": "🏠 Emma Jackson considering downsizing - CGT and IHT planning opportunity",
+            "urgency": "low",
+            "action": "estate_planning_review"
+        }
+    ]
+
+    # Filter and prioritize based on urgency and context
+    high_priority = [interaction['moment'] for interaction in recent_interactions if interaction['urgency'] == 'high']
+    medium_priority = [interaction['moment'] for interaction in recent_interactions if interaction['urgency'] == 'medium']
+
+    # Return top proactive moments for today's briefing
+    proactive_moments = []
+
+    # Always include high priority
+    proactive_moments.extend(high_priority)
+
+    # Add medium priority if space allows (max 4 total)
+    proactive_moments.extend(medium_priority[:4-len(high_priority)])
+
+    return proactive_moments
+
+# =============================================================================
 # NEW: In-Memory Data Stores for Enhanced Features
 # =============================================================================
 
@@ -258,7 +526,15 @@ def get_daily_briefing(query=""):
     briefing_sections.append("✅ Consumer Duty compliance: 8/10 clients with annual reviews completed")
     briefing_sections.append("")
 
-    # Proactive Opportunities
+    # Proactive Opportunities from Recent Context
+    proactive_moments = get_proactive_daily_moments()
+    if proactive_moments:
+        briefing_sections.append("**🚨 PROACTIVE OPPORTUNITIES DETECTED:**")
+        for moment in proactive_moments:
+            briefing_sections.append(f"{moment}")
+        briefing_sections.append("")
+
+    # Standard Proactive Opportunities
     briefing_sections.append("**STANDISH CAN HELP YOU WITH:**")
     briefing_sections.append("📧 Draft and send follow-up emails to overdue clients")
     briefing_sections.append("📞 Schedule callback reminders for high-priority clients")
@@ -2027,7 +2303,79 @@ if USE_TEMPLATE_PROCESSING:
 # =============================================================================
 
 def get_ai_response(user_message):
-    """Generate AI response using Azure OpenAI with enhanced tool calling"""
+    """Generate AI response using Azure OpenAI with enhanced tool calling + PROACTIVE AGENT LAYER"""
+
+    # =============================================================================
+    # PROACTIVE AGENT COMMAND LAYER - Handle proactive agent queries
+    # =============================================================================
+
+    query_lower = user_message.lower()
+
+    # Proactive moment detection command
+    if "detect proactive" in query_lower or "what would you suggest if client said" in query_lower:
+        # Extract the client statement
+        if " said " in query_lower:
+            client_statement = query_lower.split(" said ")[-1].strip('"\'')
+        else:
+            client_statement = query_lower.replace("detect proactive", "").replace("what would you suggest if client said", "").strip()
+
+        if client_statement:
+            suggestions = detect_proactive_moment(client_statement, context="meeting")
+            if suggestions:
+                response_parts = ["🚨 **PROACTIVE INTERRUPTION DETECTED!**\n"]
+                for suggestion in suggestions:
+                    response_parts.append(f"🎯 **RIGHT MOMENT:** {suggestion['moment']}")
+                    response_parts.append(f"📍 **RIGHT CONTEXT:** {suggestion['context']}")
+                    response_parts.append(f"💡 **RIGHT INTENT:** {suggestion['intent']}")
+                    response_parts.append(f"🎬 **ACTION:** {suggestion['action']}\n")
+
+                    if suggestion['topic']:
+                        interruption = generate_meeting_interruption("Client", suggestion['topic'])
+                        response_parts.append("**💬 SUGGESTED INTERRUPTION:**")
+                        response_parts.append(interruption)
+
+                return "\n".join(response_parts)
+            else:
+                return "💭 No proactive triggers detected in that statement. Try phrases like 'retire early', 'protect my family', or 'reduce tax'."
+
+    # Meeting completeness command
+    elif "check meeting completeness" in query_lower:
+        # Try to extract client name and duration
+        import re
+        name_match = re.search(r'for ([a-zA-Z\s]+)', user_message)
+        duration_match = re.search(r'(\d+)\s*minutes?', user_message)
+
+        client_name = name_match.group(1).strip() if name_match else "Client"
+        duration = int(duration_match.group(1)) if duration_match else 45
+
+        suggestions = check_meeting_completeness(client_name, duration)
+        response_parts = [f"⏰ **POST-MEETING ANALYSIS FOR {client_name.upper()}:**\n"]
+
+        if suggestions:
+            for suggestion in suggestions:
+                urgency_emoji = "🔴" if suggestion['urgency'] == 'high' else "🟡" if suggestion['urgency'] == 'medium' else "🟢"
+                response_parts.append(f"{urgency_emoji} {suggestion['suggestion']}")
+
+        post_meeting_actions = get_proactive_post_meeting_actions(client_name)
+        response_parts.append("\n" + post_meeting_actions)
+
+        return "\n".join(response_parts)
+
+    # Proactive opportunities command
+    elif "show proactive opportunities" in query_lower or "what should i do proactively" in query_lower:
+        proactive_moments = get_proactive_daily_moments()
+        if proactive_moments:
+            response = "🚨 **TODAY'S PROACTIVE OPPORTUNITIES:**\n\n"
+            for moment in proactive_moments:
+                response += f"• {moment}\n"
+            response += "\n💡 **ASK ME:** 'Detect proactive' + client statement to get real-time suggestions"
+            return response
+        else:
+            return "✅ No urgent proactive opportunities detected today. All clients appear to be on track."
+
+    # =============================================================================
+    # Continue with existing AI response logic
+    # =============================================================================
 
     client = AzureOpenAI(
         api_key=AZURE_OPENAI_API_KEY,
