@@ -79,7 +79,6 @@ if not st.session_state.briefing_shown and st.session_state.auto_briefing:
         except Exception as e:
             st.error(f"Error loading briefing: {e}")
             # Fallback briefing
-            from datetime import datetime
             current_date = datetime.now().strftime("%A, %B %d, %Y")
 
             st.markdown(f"""
@@ -118,9 +117,12 @@ with col1:
             st.success("✅ Email drafts ready!")
             st.write(response)
 
-            # Store for follow-up questions
+            # Store for follow-up questions (both systems)
             st.session_state['quick_action_response'] = response
             st.session_state['quick_action_type'] = 'draft_emails'
+            # Also store for chat follow-up buttons
+            st.session_state['last_assistant_response'] = response
+            st.session_state['last_user_message'] = "Draft follow-up emails for overdue clients"
 
 with col2:
     if st.button("📅 Schedule Reviews"):
@@ -129,9 +131,12 @@ with col2:
             st.success("✅ Reviews scheduled!")
             st.write(response)
 
-            # Store for follow-up questions
+            # Store for follow-up questions (both systems)
             st.session_state['quick_action_response'] = response
             st.session_state['quick_action_type'] = 'schedule_reviews'
+            # Also store for chat follow-up buttons
+            st.session_state['last_assistant_response'] = response
+            st.session_state['last_user_message'] = "Schedule annual reviews for overdue clients"
 
 with col3:
     if st.button("🎯 Client Journey Status"):
@@ -140,9 +145,12 @@ with col3:
             st.success("✅ Journey status loaded!")
             st.write(response)
 
-            # Store for follow-up questions
+            # Store for follow-up questions (both systems)
             st.session_state['quick_action_response'] = response
             st.session_state['quick_action_type'] = 'client_journey'
+            # Also store for chat follow-up buttons
+            st.session_state['last_assistant_response'] = response
+            st.session_state['last_user_message'] = "Show me client journey status overview"
 
 with col4:
     if st.button("🔄 Refresh Briefing"):
@@ -173,6 +181,10 @@ if 'quick_action_response' in st.session_state and 'quick_action_type' in st.ses
             # Clear the action
             del st.session_state['quick_action_response']
             del st.session_state['quick_action_type']
+            if 'last_assistant_response' in st.session_state:
+                del st.session_state['last_assistant_response']
+            if 'last_user_message' in st.session_state:
+                del st.session_state['last_user_message']
             st.rerun()
 
     with col2:
@@ -185,6 +197,10 @@ if 'quick_action_response' in st.session_state and 'quick_action_type' in st.ses
             # Clear the action
             del st.session_state['quick_action_response']
             del st.session_state['quick_action_type']
+            if 'last_assistant_response' in st.session_state:
+                del st.session_state['last_assistant_response']
+            if 'last_user_message' in st.session_state:
+                del st.session_state['last_user_message']
             st.rerun()
 
 # Separator
@@ -218,9 +234,9 @@ if st.button("📤 Send Message") and user_message:
     st.markdown(response_formatted)
 
 # Show interactive response buttons if STANDISH asked a question
-if 'last_assistant_response' in st.session_state:
+if 'last_assistant_response' in st.session_state and st.session_state['last_assistant_response']:
     response = st.session_state['last_assistant_response']
-    user_message = st.session_state.get('last_user_message', '')
+    user_msg = st.session_state.get('last_user_message', '')
 
     # Check if response contains question indicators
     if any(indicator in response.lower() for indicator in ['would you like', 'should i', 'do you want', 'would you prefer', '?']):
@@ -234,7 +250,7 @@ if 'last_assistant_response' in st.session_state:
             if st.button("✅ Yes, Please", key="chat_yes"):
                 with st.spinner("Processing your response..."):
                     # Create contextual follow-up based on original question
-                    contextual_prompt = f"The user asked: '{user_message}'. You responded: '{response[:200]}...'. The user said 'Yes, please proceed with that.' Please provide a specific next step or action based on the context."
+                    contextual_prompt = f"The user asked: '{user_msg}'. You responded: '{response[:200]}...'. The user said 'Yes, please proceed with that.' Please provide a specific next step or action based on the context."
                     follow_up_response = get_ai_response(contextual_prompt)
                 st.markdown("#### **🤖 STANDISH Follow-up:**")
                 st.markdown(follow_up_response.replace(" | ", "\n\n"))
@@ -258,7 +274,7 @@ if 'last_assistant_response' in st.session_state:
             if st.button("💡 Tell Me More", key="chat_more"):
                 with st.spinner("Processing your response..."):
                     # Create contextual follow-up for more details
-                    contextual_prompt = f"The user asked: '{user_message}'. You responded: '{response[:200]}...'. The user wants more details. Please provide additional specific information about this topic."
+                    contextual_prompt = f"The user asked: '{user_msg}'. You responded: '{response[:200]}...'. The user wants more details. Please provide additional specific information about this topic."
                     follow_up_response = get_ai_response(contextual_prompt)
                 st.markdown("#### **🤖 STANDISH Follow-up:**")
                 st.markdown(follow_up_response.replace(" | ", "\n\n"))
@@ -275,7 +291,7 @@ if 'last_assistant_response' in st.session_state:
         if st.button("📤 Send Response", key="send_chat_response") and quick_response:
             with st.spinner("Processing your response..."):
                 # Create contextual follow-up with user's specific response
-                contextual_prompt = f"The user originally asked: '{user_message}'. You responded with suggestions. Now the user specifically responded: '{quick_response}'. Please provide a helpful follow-up based on their specific response."
+                contextual_prompt = f"The user originally asked: '{user_msg}'. You responded with suggestions. Now the user specifically responded: '{quick_response}'. Please provide a helpful follow-up based on their specific response."
                 follow_up_response = get_ai_response(contextual_prompt)
             st.markdown("#### **🤖 STANDISH Follow-up:**")
             st.markdown(follow_up_response.replace(" | ", "\n\n"))
@@ -335,7 +351,6 @@ with st.sidebar:
         st.rerun()
 
     if st.button("📧 Send Follow-up Email", key="sidebar_email"):
-        # Simple, guaranteed-to-work response
         response = """📧 EMAIL READY TO SEND TO SARAH WILLIAMS:
 
 Subject: Annual Review - Let's Catch Up
@@ -360,7 +375,6 @@ Ready to send this follow-up email?"""
         st.session_state['action_type'] = 'email'
 
     if st.button("📞 Schedule Call", key="sidebar_call"):
-        # Simple, guaranteed-to-work response
         response = """📅 MEETING READY TO SCHEDULE FOR DAVID CHEN:
 
 Type: Annual Review
@@ -386,7 +400,6 @@ Would you like me to send the calendar invite and notification email to the clie
         st.session_state['action_type'] = 'schedule'
 
     if st.button("📋 Update CRM", key="sidebar_crm"):
-        # Simple, guaranteed-to-work response
         response = """📋 CRM UPDATE READY FOR EMMA JACKSON:
 
 Date: 2026-02-05
@@ -407,7 +420,6 @@ Ready to update the CRM with these details?"""
         st.session_state['action_type'] = 'crm'
 
     if st.button("🎂 Birthday Check", key="sidebar_birthday"):
-        # Simple, guaranteed-to-work response
         response = """🎂 BIRTHDAY OPPORTUNITIES FOR FEBRUARY:
 
 Found 2 upcoming birthdays:
@@ -429,10 +441,8 @@ Ready to send birthday greetings and schedule follow-ups?"""
         st.markdown("---")
         st.markdown("**🤖 STANDISH Response:**")
 
-        # Display the response using st.text_area for guaranteed visibility
         response_text = st.session_state['action_response']
 
-        # Simple text display that definitely shows content
         st.text_area(
             "Response:",
             value=response_text,
@@ -447,7 +457,6 @@ Ready to send birthday greetings and schedule follow-ups?"""
         with col1:
             if st.button("✅ Yes, Do It", key="confirm_action", help="Confirm this action"):
                 st.success("✅ Action confirmed! STANDISH will execute this.")
-                # Clear the action response
                 if 'action_response' in st.session_state:
                     del st.session_state['action_response']
                 if 'action_type' in st.session_state:
@@ -461,7 +470,6 @@ Ready to send birthday greetings and schedule follow-ups?"""
         with col3:
             if st.button("❌ Cancel", key="cancel_action", help="Cancel this action"):
                 st.warning("❌ Action cancelled.")
-                # Clear the action response
                 if 'action_response' in st.session_state:
                     del st.session_state['action_response']
                 if 'action_type' in st.session_state:
@@ -488,7 +496,6 @@ from pathlib import Path
 st.markdown("---")
 st.markdown("*🏦 **STANDISH** - AI Assistant v2.0 - Always here to help you stay ahead of client needs*")
 
-# Version info at bottom
 version_info = "STANDISH v2.0"
 try:
     if Path("commit.txt").exists():
