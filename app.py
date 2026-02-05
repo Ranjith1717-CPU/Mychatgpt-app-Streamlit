@@ -206,41 +206,9 @@ if 'quick_action_response' in st.session_state and 'quick_action_type' in st.ses
 # Separator
 st.markdown("---")
 
-# =============================================================================
-# PROACTIVE AGENT COMMANDS - New layer on top of existing chat
-# =============================================================================
-
-st.markdown("### 🚨 **PROACTIVE AGENT - TEST COMMANDS**")
-st.markdown("*Try these new proactive commands in the chat below:*")
-
-# Display proactive command examples
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.info("""
-    **🎯 Context Detection:**
-    • "Detect proactive: I want to retire early"
-    • "What would you suggest if client said 'protect my family'?"
-    """)
-
-with col2:
-    st.info("""
-    **📅 Meeting Analysis:**
-    • "Check meeting completeness for Sarah Williams 30 minutes"
-    • "Show proactive opportunities"
-    """)
-
-with col3:
-    st.info("""
-    **💡 Daily Opportunities:**
-    • "What should I do proactively today?"
-    • "Show me contextual moments"
-    """)
-
 # Chat Interface
 st.markdown("### 💬 **CHAT WITH YOUR ASSISTANT:**")
 st.markdown("*Ask me anything or request autonomous actions like: 'Send birthday email to Emma' or 'Update CRM for David Chen'*")
-st.markdown("*NEW: Try proactive agent commands from the examples above!*")
 
 # Create text input area for user messages
 user_message = st.text_area("Your message:", height=100, placeholder="Type your request here... (e.g., 'Send follow-up email to Sarah Williams' or 'What are my urgent tasks today?')")
