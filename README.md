@@ -266,6 +266,17 @@ AZURE_OPENAI_DEPLOYMENT_NAME = "your-deployment-name"
 
 ## 🚀 Quick Start
 
+### 🌐 **Try STANDISH Online**
+**Live Demo:** [https://ranjithchatgptapp.streamlit.app/](https://ranjithchatgptapp.streamlit.app/)
+
+Experience STANDISH immediately without any setup! The live demo includes:
+- ✅ Full proactive daily briefings
+- ✅ All autonomous actions and interactive features
+- ✅ Complete client journey tracking
+- ✅ Enhanced contextual suggestions and moment detection
+
+### 🛠️ **Local Installation**
+
 1. **Install Dependencies**:
    ```bash
    pip install -r requirements.txt
