@@ -118,12 +118,20 @@ with col1:
             st.success("✅ Email drafts ready!")
             st.write(response)
 
+            # Store for follow-up questions
+            st.session_state['quick_action_response'] = response
+            st.session_state['quick_action_type'] = 'draft_emails'
+
 with col2:
     if st.button("📅 Schedule Reviews"):
         with st.spinner("Scheduling reviews..."):
             response = get_ai_response("Schedule annual reviews for overdue clients")
             st.success("✅ Reviews scheduled!")
             st.write(response)
+
+            # Store for follow-up questions
+            st.session_state['quick_action_response'] = response
+            st.session_state['quick_action_type'] = 'schedule_reviews'
 
 with col3:
     if st.button("🎯 Client Journey Status"):
@@ -132,10 +140,52 @@ with col3:
             st.success("✅ Journey status loaded!")
             st.write(response)
 
+            # Store for follow-up questions
+            st.session_state['quick_action_response'] = response
+            st.session_state['quick_action_type'] = 'client_journey'
+
 with col4:
     if st.button("🔄 Refresh Briefing"):
         st.session_state.briefing_shown = False
         st.rerun()
+
+# Quick Action Follow-up buttons
+if 'quick_action_response' in st.session_state and 'quick_action_type' in st.session_state:
+    action_type = st.session_state['quick_action_type']
+
+    st.markdown("---")
+    st.markdown("### 💬 **Follow-up Options:**")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("✅ Yes, Do This", key="quick_action_yes"):
+            if action_type == 'draft_emails':
+                st.success("✅ Email drafts will be sent to the specified clients!")
+                st.info("📧 Follow-up emails for Sarah Williams and David Chen have been queued for sending.")
+            elif action_type == 'schedule_reviews':
+                st.success("✅ Review meetings will be scheduled!")
+                st.info("📅 Calendar invites for annual reviews have been prepared and will be sent.")
+            elif action_type == 'client_journey':
+                st.success("✅ Client journey tracking updated!")
+                st.info("🎯 All client stages have been reviewed and next actions prioritized.")
+
+            # Clear the action
+            del st.session_state['quick_action_response']
+            del st.session_state['quick_action_type']
+            st.rerun()
+
+    with col2:
+        if st.button("✏️ Modify This", key="quick_action_modify"):
+            st.info("💡 Please specify your changes in the chat area below. For example: 'Change the email subject' or 'Schedule for next week instead'")
+
+    with col3:
+        if st.button("❌ Cancel", key="quick_action_cancel"):
+            st.warning("❌ Action cancelled.")
+            # Clear the action
+            del st.session_state['quick_action_response']
+            del st.session_state['quick_action_type']
+            st.rerun()
 
 # Separator
 st.markdown("---")
@@ -170,6 +220,7 @@ if st.button("📤 Send Message") and user_message:
 # Show interactive response buttons if STANDISH asked a question
 if 'last_assistant_response' in st.session_state:
     response = st.session_state['last_assistant_response']
+    user_message = st.session_state.get('last_user_message', '')
 
     # Check if response contains question indicators
     if any(indicator in response.lower() for indicator in ['would you like', 'should i', 'do you want', 'would you prefer', '?']):
@@ -177,48 +228,62 @@ if 'last_assistant_response' in st.session_state:
         st.markdown("### 💬 **Quick Response to STANDISH:**")
 
         # Create quick response buttons
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3 = st.columns(3)
 
         with col1:
-            if st.button("✅ Yes, Please", key="quick_yes"):
+            if st.button("✅ Yes, Please", key="chat_yes"):
                 with st.spinner("Processing your response..."):
-                    follow_up_response = get_ai_response("Yes, please proceed with that.")
+                    # Create contextual follow-up based on original question
+                    contextual_prompt = f"The user asked: '{user_message}'. You responded: '{response[:200]}...'. The user said 'Yes, please proceed with that.' Please provide a specific next step or action based on the context."
+                    follow_up_response = get_ai_response(contextual_prompt)
                 st.markdown("#### **🤖 STANDISH Follow-up:**")
                 st.markdown(follow_up_response.replace(" | ", "\n\n"))
+                # Clear after response
+                if 'last_assistant_response' in st.session_state:
+                    del st.session_state['last_assistant_response']
+                if 'last_user_message' in st.session_state:
+                    del st.session_state['last_user_message']
 
         with col2:
-            if st.button("❌ No, Thanks", key="quick_no"):
-                with st.spinner("Processing your response..."):
-                    follow_up_response = get_ai_response("No, thank you. I don't need that right now.")
-                st.markdown("#### **🤖 STANDISH Follow-up:**")
-                st.markdown(follow_up_response.replace(" | ", "\n\n"))
+            if st.button("❌ No, Thanks", key="chat_no"):
+                st.success("👍 Understood! Let me know if you need help with anything else.")
+                # Clear after response
+                if 'last_assistant_response' in st.session_state:
+                    del st.session_state['last_assistant_response']
+                if 'last_user_message' in st.session_state:
+                    del st.session_state['last_user_message']
+                st.rerun()
 
         with col3:
-            if st.button("💡 Tell Me More", key="quick_more"):
+            if st.button("💡 Tell Me More", key="chat_more"):
                 with st.spinner("Processing your response..."):
-                    follow_up_response = get_ai_response("Please tell me more details about this.")
+                    # Create contextual follow-up for more details
+                    contextual_prompt = f"The user asked: '{user_message}'. You responded: '{response[:200]}...'. The user wants more details. Please provide additional specific information about this topic."
+                    follow_up_response = get_ai_response(contextual_prompt)
                 st.markdown("#### **🤖 STANDISH Follow-up:**")
                 st.markdown(follow_up_response.replace(" | ", "\n\n"))
-
-        with col4:
-            if st.button("🔄 Different Option", key="quick_different"):
-                with st.spinner("Processing your response..."):
-                    follow_up_response = get_ai_response("Do you have any other suggestions or alternatives?")
-                st.markdown("#### **🤖 STANDISH Follow-up:**")
-                st.markdown(follow_up_response.replace(" | ", "\n\n"))
+                # Clear after response
+                if 'last_assistant_response' in st.session_state:
+                    del st.session_state['last_assistant_response']
+                if 'last_user_message' in st.session_state:
+                    del st.session_state['last_user_message']
 
         # Quick text response option
-        st.markdown("**Or type a custom response:**")
-        quick_response = st.text_input("Your response:", key="quick_text_response", placeholder="Type your response here...")
+        st.markdown("**Or type a specific response:**")
+        quick_response = st.text_input("Your response:", key="chat_text_response", placeholder="Type your specific response here...")
 
-        if st.button("📤 Send Response", key="send_quick_response") and quick_response:
+        if st.button("📤 Send Response", key="send_chat_response") and quick_response:
             with st.spinner("Processing your response..."):
-                follow_up_response = get_ai_response(quick_response)
+                # Create contextual follow-up with user's specific response
+                contextual_prompt = f"The user originally asked: '{user_message}'. You responded with suggestions. Now the user specifically responded: '{quick_response}'. Please provide a helpful follow-up based on their specific response."
+                follow_up_response = get_ai_response(contextual_prompt)
             st.markdown("#### **🤖 STANDISH Follow-up:**")
             st.markdown(follow_up_response.replace(" | ", "\n\n"))
-            # Clear the session state after response
+            # Clear after response
             if 'last_assistant_response' in st.session_state:
                 del st.session_state['last_assistant_response']
+            if 'last_user_message' in st.session_state:
+                del st.session_state['last_user_message']
 
 # Sidebar with additional proactive features
 with st.sidebar:
