@@ -78,23 +78,46 @@ if not st.session_state.briefing_shown and st.session_state.auto_briefing:
 
         except Exception as e:
             st.error(f"Error loading briefing: {e}")
-            # Fallback briefing
+            # Dynamic fallback briefing using available data
             current_date = datetime.now().strftime("%A, %B %d, %Y")
+
+            # Try to get dynamic stats even in fallback
+            try:
+                import backend
+                if hasattr(backend, 'data_manager') and backend.data_manager:
+                    total_clients = len(backend.data_manager.get_all_clients())
+                    overdue_count = len(backend.data_manager.get_overdue_reviews())
+                    overdue_clients = backend.data_manager.get_overdue_reviews()
+                    overdue_names = ", ".join([c['name'] for c in overdue_clients[:2]]) if overdue_clients else "None"
+                else:
+                    total_clients = 6
+                    overdue_count = 2
+                    overdue_names = "Check system"
+            except:
+                total_clients = 6
+                overdue_count = 2
+                overdue_names = "Check system"
+
+            compliance_rate = ((total_clients - overdue_count) / total_clients * 100) if total_clients > 0 else 100
 
             st.markdown(f"""
             <div class="briefing-box">
             <strong>📅 TODAY: {current_date}</strong><br><br>
 
             <strong>YESTERDAY'S ACTIVITY SUMMARY:</strong><br>
-            ⚠️ 2 clients with overdue reviews<br>
-            📧 3 pending follow-up emails<br>
+            ⚠️ {overdue_count} clients with overdue reviews: {overdue_names}<br>
+            📧 Pending follow-ups require attention<br>
             ✅ No critical meetings missed<br><br>
 
             <strong>TODAY'S PRIORITY ACTIONS:</strong><br>
-            🚨 OVERDUE: Sarah Williams annual review (16 days overdue)<br>
-            📅 DUE THIS WEEK: David Chen annual review (in 3 days)<br>
-            🎂 BIRTHDAY OPPORTUNITY: Emma Jackson - perfect check-in opportunity<br>
+            🚨 Review {overdue_count} overdue client reviews<br>
+            📅 Check upcoming review deadlines<br>
+            🎂 Look for birthday outreach opportunities<br>
             📊 Review market updates for client portfolios<br><br>
+
+            <strong>WEEKLY STATS:</strong><br>
+            📈 Total Clients: {total_clients}<br>
+            ✅ Compliance Rate: {compliance_rate:.0f}%<br><br>
 
             <strong>STANDISH CAN HELP YOU WITH:</strong><br>
             📧 Draft follow-up emails to overdue clients<br>
